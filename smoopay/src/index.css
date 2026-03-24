@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode */
+    --background: #f1f5f9; 
+    --surface: rgba(255, 255, 255, 0.7);
+    --surface-hover: rgba(255, 255, 255, 0.9);
+    --primary: #00B8D9;
+    --secondary: #6A1B9A;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --glow-color: rgba(0, 184, 217, 0.3);
+    --border: rgba(0, 0, 0, 0.05);
+  }
+
+  .dark {
+    /* Dark Mode (Original Navy) */
+    --background: #0B0E14;
+    --surface: rgba(255, 255, 255, 0.05);
+    --surface-hover: rgba(255, 255, 255, 0.1);
+    --primary: #00E5FF;
+    --secondary: #9C27B0;
+    --text-primary: #FFFFFF;
+    --text-secondary: #9CA3AF;
+    --glow-color: rgba(0, 229, 255, 0.5);
+    --border: rgba(255, 255, 255, 0.1);
+  }
+
+  body {
+    @apply bg-background text-textPrimary antialiased selection:bg-primary transition-colors duration-500;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-surface backdrop-blur-xl border border-white/10 shadow-xl dark:shadow-glass rounded-2xl transition-all duration-300;
+  }
+}
