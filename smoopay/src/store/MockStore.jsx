@@ -41,7 +41,7 @@ export function MockStoreProvider({ children }) {
     try {
       console.log("MockStore: Starting fetchAgreements...");
       setIsLoading(true);
-      const response = await fetch(`${API_ENDPOINTS.GET_AGREEMENTS}?CreatedBy=12345678A`);
+      const response = await fetch(`${API_ENDPOINTS.GET_AGREEMENTS}?CreatedBy=0000002892`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       console.log("MockStore: Data received from API:", data);
@@ -54,6 +54,7 @@ export function MockStoreProvider({ children }) {
         role: 'External Contractor',
         currency: agreement.Currency,
         amount: agreement.TransactionValue,
+        valuePaid: agreement.ValuePaid || 0,
         status: agreement.Status === 'Ongoing' ? 'Active' : agreement.Status
       }));
       

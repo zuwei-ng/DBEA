@@ -7,12 +7,14 @@ export const API_ENDPOINTS = {
   UPDATE_AGREEMENT: `${BASE_URL}/Agreement/rest/Agreement/UpdateAgreement`,
   DELETE_AGREEMENT: `${BASE_URL}/Agreement/rest/Agreement/DeleteAgreement`,
   CREATE_AGREEMENT: `${BASE_URL}/Agreement/rest/Agreement/CreateAgreement`,
+  ACTIVATE_AGREEMENT: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/ActivateAgreement`,
 
   // Milestone Lifecycle
   CREATE_MILESTONE: `${BASE_URL}/Milestone/rest/Milestone/CreateMilestone`,
   UPDATE_MILESTONE: `${BASE_URL}/Milestone/rest/Milestone/UpdateMilestone`,
   DELETE_MILESTONE: `${BASE_URL}/Milestone/rest/Milestone/DeleteMilestone`,
   UPDATE_STATUS: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/UpdateMilestoneStatus`,
+  APPROVE_MILESTONE: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/ApproveMilestone`,
 
   // Amazon S3 File Fetch
   FETCH_FILE: 'https://smuedu-dev.outsystemsenterprise.com/SMULab_AmazonS3/rest/AmazonS3/FetchFile',

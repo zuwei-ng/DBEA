@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Download, ShieldCheck } from 'lucide-react';
+import { X, FileText, Download } from 'lucide-react';
 import { Button } from './Button';
 import { GlassCard } from './GlassCard';
 
@@ -30,15 +30,12 @@ export function DocumentModal({ isOpen, onClose, document }) {
                  <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
                    <FileText className="w-6 h-6" />
                  </div>
-                 <div className="min-w-0">
-                    <h2 className="text-2xl font-bold text-textPrimary tracking-tight truncate">{document.name}</h2>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                      <p className="text-[10px] font-bold text-textSecondary uppercase tracking-widest leading-none">
-                        Secured in Vault
-                      </p>
-                    </div>
-                 </div>
+                  <div className="min-w-0">
+                     <h2 className="text-2xl font-bold text-textPrimary tracking-tight truncate">{document.name}</h2>
+                     <p className="text-[10px] font-mono text-textSecondary/60 uppercase tracking-tight mt-1">
+                       ID: {document.id}
+                     </p>
+                  </div>
               </div>
               
               <div className="flex items-center gap-2">

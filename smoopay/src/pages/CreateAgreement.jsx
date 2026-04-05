@@ -9,10 +9,11 @@ import { API_ENDPOINTS } from '../lib/api';
 export default function CreateAgreement({ onBack, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    CreatedBy: "12345678A", // Hardcoded per user example
+    CreatedBy: "0000002892", // Hardcoded per user example
     Title: "",
     Description: "",
     ContractorId: "",
+    ContractorUen: "",
     TransactionValue: "",
     Currency: "USD",
     Status: "Draft",
@@ -94,20 +95,35 @@ export default function CreateAgreement({ onBack, onSuccess }) {
       >
         <GlassCard className="px-8 pb-8 pt-0 space-y-8" hoverEffect>
           {/* Section: Project Branding */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary" /> Project Title
-              </label>
-              <input 
-                required
-                type="text"
-                placeholder="e.g. Frontend Development Phase 1"
-                className={inputClasses}
-                value={formData.Title}
-                onChange={e => setFormData({...formData, Title: e.target.value})}
-              />
-            </div>
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" /> Project Title
+            </label>
+            <input 
+              required
+              type="text"
+              placeholder="e.g. Frontend Development Phase 1"
+              className={inputClasses}
+              value={formData.Title}
+              onChange={e => setFormData({...formData, Title: e.target.value})}
+            />
+          </div>
+
+          <div className="space-y-4 pt-4">
+            <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
+              Description
+            </label>
+            <textarea 
+              required
+              rows={3}
+              placeholder="Briefly describe the scope of work..."
+              className={textareaClasses}
+              value={formData.Description}
+              onChange={e => setFormData({...formData, Description: e.target.value})}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
             <div className="space-y-4">
               <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" /> Contractor ID
@@ -121,27 +137,26 @@ export default function CreateAgreement({ onBack, onSuccess }) {
                 onChange={e => setFormData({...formData, ContractorId: e.target.value})}
               />
             </div>
-          </div>
-
-          <div className="space-y-4 pt-4">
-            <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
-              Description
-            </label>
-              <textarea 
+            <div className="space-y-4">
+              <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
+                <User className="w-4 h-4 text-primary" /> Contractor UEN
+              </label>
+              <input 
                 required
-                rows={3}
-                placeholder="Briefly describe the scope of work..."
-                className={textareaClasses}
-                value={formData.Description}
-                onChange={e => setFormData({...formData, Description: e.target.value})}
+                type="text"
+                placeholder="e.g. 111111111"
+                className={inputClasses}
+                value={formData.ContractorUen}
+                onChange={e => setFormData({...formData, ContractorUen: e.target.value})}
               />
+            </div>
           </div>
 
           {/* Section: Financials */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 border-t border-white/5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
             <div className="space-y-4">
               <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-primary" /> Value
+                Value
               </label>
               <div className="relative">
                 <input 
@@ -169,17 +184,6 @@ export default function CreateAgreement({ onBack, onSuccess }) {
                 <option value="EUR">EUR - Euro</option>
                 <option value="GBP">GBP - British Pound</option>
               </select>
-            </div>
-            <div className="space-y-4">
-               <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
-                 Status
-               </label>
-               <input 
-                 disabled
-                 type="text"
-                 className={`${inputClasses} bg-primary/5 border-primary/20 text-primary font-bold`}
-                 value="DRAFT"
-               />
             </div>
           </div>
 
