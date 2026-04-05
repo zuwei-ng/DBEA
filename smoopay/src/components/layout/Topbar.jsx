@@ -10,7 +10,7 @@ export default function Topbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="h-16 border-b border-border bg-surface/30 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative z-10 transition-colors"
+      className="h-16 border-b border-border bg-surface/30 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative z-[140] transition-colors"
     >
       <div className="flex items-center flex-1 gap-4">
         <button className="md:hidden text-textSecondary hover:text-textPrimary transition-colors">

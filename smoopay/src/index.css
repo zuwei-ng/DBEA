@@ -38,4 +38,13 @@
   .glass-panel {
     @apply bg-surface backdrop-blur-xl border border-white/10 shadow-xl dark:shadow-glass rounded-2xl transition-all duration-300;
   }
+
+  .modal-panel {
+    @apply backdrop-blur-2xl border border-white/10 shadow-2xl dark:shadow-glass rounded-[2rem] transition-all duration-500;
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+
+  .dark .modal-panel {
+    background-color: rgba(11, 14, 20, 0.95);
+  }
 }
