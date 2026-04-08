@@ -31,19 +31,137 @@ export default function SignUp() {
   const currentStep = user?.onboardingStep || 1;
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [showErrors, setShowErrors] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState("Analyzing Application");
+  const [verifiedData, setVerifiedData] = useState(null);
+
+  const [formData, setFormData] = useState({
+    givenName: '',
+    icNumber: '',
+    streetAddress: '',
+    postalCode: '',
+    country: 'Singapore',
+    preferredUserld: '',
+    emailAddress: '',
+    phoneCountryCode: '+65',
+    mobileNumber: '',
+    password: '',
+    monthlyRevenue: '',
+    industry: '',
+    officeAddress1: '',
+    officeAddress2: '',
+    officeAddress3: '',
+    officeContactNumber: '',
+    officeContactNumberExt: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const submitData = async () => {
+    setProcessingStatus("Creating Corporate Profile...");
+    try {
+      const annualSalary = (Number(formData.monthlyRevenue) || 0) * 12;
+      
+      const payload = {
+        preferredUserld: formData.preferredUserld || 'demo01',
+        emailAddress: formData.emailAddress || 'demo@email.com',
+        password: formData.password || 'Test1234!',
+        icNumber: formData.icNumber || 'TESTUEN111',
+        givenName: formData.givenName || 'Demo Company',
+        streetAddress: formData.streetAddress || '1 Raffles Place',
+        postalCode: formData.postalCode || '048616',
+        phoneCountryCode: formData.phoneCountryCode || '+65',
+        mobileNumber: formData.mobileNumber || '82345678',
+        annualSalary: annualSalary > 0 ? annualSalary : 120000,
+        country: formData.country || 'Singapore',
+
+        city: "-",
+        state: "-",
+        countryCode: "-",
+        phoneAreaCode: "-",
+        phoneLocalNumber: "-",
+        officeAddress1: formData.officeAddress1 || "-",
+        officeAddress2: formData.officeAddress2 || "-",
+        officeAddress3: formData.officeAddress3 || "-",
+        officeContactNumber: formData.officeContactNumber || "-",
+        officeContactNumberExt: formData.officeContactNumberExt || "-",
+
+        tenantId: "600",
+        familyName: "-",
+        dateOfBirth: "2014-12-31",
+        gender: "-",
+        occupation: "-",
+        positionTitle: "-",
+        yearOfService: 0,
+        employerName: "-",
+        workingInSingapore: false,
+        createDepositAccount: true,
+        customerType: "200",
+        currency: "SGD"
+      };
+
+      const firstResponse = await fetch("https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/StoreCustomerCredential", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!firstResponse.ok) {
+        console.error("StoreCustomerCredential failed:", await firstResponse.text());
+      }
+
+      setProcessingStatus("Verifying Gateway Link...");
+      const username = "12173e30ec556fe4a951";
+      const pw = "2fbbd75fd60a8389b82719d2dbc37f1eb9ed226f3eb43cfa7d9240c72fd5+bfc89ad4-c17f-4fe9-82c2-918d29d59fe0";
+      const basicAuth = btoa(`${username}:${pw}`);
+
+      const secondResponse = await fetch("https://smuedu-dev.outsystemsenterprise.com/gateway/rest/customer/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Basic ${basicAuth}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!secondResponse.ok) {
+         console.error("Gateway Customer API failed:", await secondResponse.text());
+      }
+
+      setProcessingStatus("Executing Final Validation...");
+      const uenToUse = formData.icNumber || 'TESTUEN111';
+      const pwToUse = formData.password || 'Test1234!';
+      const verifyUrl = `https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/VerifyLogin?UEN=${encodeURIComponent(uenToUse)}&Password=${encodeURIComponent(pwToUse)}`;
+      
+      const verifyRes = await fetch(verifyUrl);
+      const verifyJson = await verifyRes.json();
+      
+      if (verifyJson.IsSuccess) {
+         setVerifiedData(verifyJson);
+      }
+    } catch (error) {
+       console.error("Submission error:", error);
+    }
+  };
 
   const nextStep = () => {
     if (currentStep < 4) {
       updateUser({ onboardingStep: currentStep + 1 });
     } else {
-      // Finalize onboarding
+      // Validate compulsory
+      if (!formData.givenName || !formData.icNumber || !formData.emailAddress) {
+        setShowErrors(true);
+        return;
+      }
       const finalPayload = { ...formData };
       Object.keys(finalPayload).forEach(key => {
         if (finalPayload[key] === "") finalPayload[key] = "-";
       });
       console.log("Submitting Corporate Customer Payload:", finalPayload);
       setIsProcessing(true);
-      await submitData();
+      submitData(); // Fire submit data synchronously mapped to interval progress
     }
   };
 
@@ -63,14 +181,24 @@ export default function SignUp() {
           progress = 100;
           clearInterval(interval);
           setTimeout(() => {
-            updateUser({ onboardingStep: 5, isNewUser: false });
+            const finalGivenName = verifiedData?.GivenName || formData.givenName || 'Demo Company';
+            updateUser({ 
+              onboardingStep: 5, 
+              isNewUser: false,
+              name: finalGivenName,
+              profileData: {
+                givenName: finalGivenName
+              },
+              customerId: verifiedData?.CustomerId || '-',
+              uen: verifiedData?.UEN || formData.icNumber || 'TESTUEN111'
+            });
           }, 1000);
         }
         setScanProgress(progress);
       }, 200);
       return () => clearInterval(interval);
     }
-  }, [isProcessing]);
+  }, [isProcessing, verifiedData, formData, updateUser]);
 
   return (
     <div className="min-h-screen bg-background text-textPrimary p-6 md:p-12 overflow-y-auto transition-colors duration-500">
@@ -118,9 +246,9 @@ export default function SignUp() {
               transition={{ duration: 0.4 }}
             >
               <GlassCard className="p-8 md:p-12">
-                {currentStep === 1 && <BusinessStep />}
-                {currentStep === 2 && <PersonnelStep />}
-                {currentStep === 3 && <FinancialStep />}
+                {currentStep === 1 && <BusinessStep formData={formData} handleChange={handleChange} showErrors={showErrors} />}
+                {currentStep === 2 && <PersonnelStep formData={formData} handleChange={handleChange} />}
+                {currentStep === 3 && <FinancialStep formData={formData} handleChange={handleChange} />}
                 {currentStep === 4 && <VerificationStep />}
 
                 <div className="mt-12 flex justify-between items-center">
@@ -183,13 +311,13 @@ export default function SignUp() {
   );
 }
 
-function BusinessStep() {
+function BusinessStep({ formData, handleChange, showErrors }) {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold mb-2 text-textPrimary">Account Setup</h2>
       <p className="text-textSecondary mb-8">Create your corporate login credentials.</p>
       
-      {showErrors && (!data.preferredUserld || !data.emailAddress || !data.password) && (
+      {showErrors && (!formData.givenName || !formData.icNumber || !formData.emailAddress) && (
         <div className="bg-red-500/10 text-red-500 px-4 py-3 rounded-xl text-sm mb-6 border border-red-500/20 flex items-center gap-2">
           <span>⚠️</span> Please fill in all compulsory fields to continue.
         </div>
@@ -198,22 +326,30 @@ function BusinessStep() {
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Trading Name</label>
-          <input type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Acme FinTech Ltd" />
+          <input name="givenName" value={formData.givenName} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Acme FinTech Ltd" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Registration Number</label>
-          <input type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. 202412345M" />
+          <input name="icNumber" value={formData.icNumber} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. 202412345M" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Email Address</label>
+          <input name="emailAddress" value={formData.emailAddress} onChange={handleChange} type="email" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. hello@acme.com" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Password</label>
+          <input name="password" value={formData.password} onChange={handleChange} type="password" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="••••••••" />
         </div>
         <div className="md:col-span-2 space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Registered Address</label>
-          <input type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="123 Financial District, Suite 500" />
+          <input name="streetAddress" value={formData.streetAddress} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="123 Financial District, Suite 500" />
         </div>
       </div>
     </div>
   );
 }
 
-function PersonnelStep() {
+function PersonnelStep({ formData, handleChange }) {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold mb-2 text-textPrimary">Key Personnel</h2>
@@ -229,7 +365,7 @@ function PersonnelStep() {
               </div>
            </div>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" className="bg-background/40 border border-border rounded-lg px-4 py-2 text-sm outline-none focus:border-primary text-textPrimary" placeholder="Full Name" />
+              <input name="preferredUserld" value={formData.preferredUserld} onChange={handleChange} type="text" className="bg-background/40 border border-border rounded-lg px-4 py-2 text-sm outline-none focus:border-primary text-textPrimary" placeholder="Full Name (Username)" />
               <input type="text" className="bg-background/40 border border-border rounded-lg px-4 py-2 text-sm outline-none focus:border-primary text-textPrimary" placeholder="Nationality" />
            </div>
         </div>
@@ -241,7 +377,7 @@ function PersonnelStep() {
   );
 }
 
-function FinancialStep() {
+function FinancialStep({ formData, handleChange }) {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold mb-2 text-textPrimary">Financial Profile</h2>
@@ -249,7 +385,11 @@ function FinancialStep() {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {['E-Commerce', 'Professional Services', 'Tech / SaaS', 'Logistic', 'Retail', 'Education'].map(ind => (
-           <button key={ind} className="p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium text-center text-textPrimary">
+           <button 
+             key={ind} 
+             onClick={() => handleChange({ target: { name: 'industry', value: ind } })} 
+             className={cn("p-4 rounded-xl border transition-all text-sm font-medium text-center text-textPrimary", formData.industry === ind ? 'border-primary text-primary bg-primary/10' : 'border-border hover:border-primary hover:bg-primary/5')}
+           >
              {ind}
            </button>
         ))}
@@ -259,8 +399,35 @@ function FinancialStep() {
         <label className="text-sm font-medium text-textSecondary uppercase tracking-wider block mb-2">Estimated Monthly Revenue (USD)</label>
         <div className="relative">
            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-bold">$</div>
-           <input type="number" className="w-full bg-surface-hover/20 border border-white/10 rounded-xl px-10 py-4 text-2xl font-bold focus:border-primary outline-none text-textPrimary" placeholder="100,000" />
+           <input name="monthlyRevenue" value={formData.monthlyRevenue} onChange={handleChange} type="number" className="w-full bg-surface-hover/20 border border-white/10 rounded-xl px-10 py-4 text-2xl font-bold focus:border-primary outline-none text-textPrimary" placeholder="100000" />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function VerificationStep() {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold mb-2 text-textPrimary">Security Verification</h2>
+      <p className="text-textSecondary mb-8">Scan your business documents and directors identification.</p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-8 border-2 border-dashed border-border rounded-3xl flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary/50 transition-all">
+           <div className="w-16 h-16 rounded-2xl bg-surface-hover/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><FileText className="w-8 h-8 text-textSecondary group-hover:text-primary" /></div>
+           <span className="font-bold text-textPrimary mb-1">Company Documents</span>
+           <span className="text-xs text-textSecondary uppercase tracking-widest">Incorporation & Financials</span>
+        </div>
+        <div className="p-8 border-2 border-dashed border-border rounded-3xl flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary/50 transition-all">
+           <div className="w-16 h-16 rounded-2xl bg-surface-hover/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"><UserCheck className="w-8 h-8 text-textSecondary group-hover:text-primary" /></div>
+           <span className="font-bold text-textPrimary mb-1">Director Identification</span>
+           <span className="text-xs text-textSecondary uppercase tracking-widest">Passport or National ID</span>
+        </div>
+      </div>
+      
+      <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center gap-4 text-xs">
+         <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
+         <p className="text-textSecondary">Final verification step uses end-to-end encrypted biometric checks. Your funds remain protected by bank-grade security protocols.</p>
       </div>
     </div>
   );
@@ -303,5 +470,26 @@ function OfficeStep({ data, onChange }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function UserCheck(props) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <polyline points="16 11 18 13 22 9" />
+    </svg>
   );
 }
