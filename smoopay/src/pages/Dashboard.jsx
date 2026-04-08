@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GlassCard } from '../components/ui/GlassCard';
 import { Button } from '../components/ui/Button';
@@ -10,18 +10,49 @@ import { cn } from '../lib/utils';
 import { getCurrencyFlag } from '../lib/currencyUtils';
 
 export default function Dashboard() {
-  const { wallets, transactions, exchangeCurrency } = useMockStore();
+  const { wallets, transactions, exchangeCurrency, user, updateUser } = useMockStore();
   
-  const [exchangeFrom, setExchangeFrom] = useState('USD');
-  const [exchangeTo, setExchangeTo] = useState('EUR');
+  const [exchangeFrom, setExchangeFrom] = useState(wallets[0]?.currency || 'SGD');
+  const [exchangeTo, setExchangeTo] = useState(wallets.length > 1 ? wallets[1].currency : wallets[0]?.currency || 'SGD');
   const [exchangeAmount, setExchangeAmount] = useState('');
   
   const [selectedTx, setSelectedTx] = useState(null); // Used to display invoice modal
+
+  // Fetch latest currencies from backend on dashboard load
+  useEffect(() => {
+    const givenName = user?.profileData?.givenName;
+    if (!givenName || givenName === '-') return;
+
+    const fetchCurrencies = async () => {
+      try {
+        const nameEnc = encodeURIComponent(givenName);
+        const res = await fetch(`https://personal-ldjy5itc.outsystemscloud.com/Currency/rest/CustCurrency/GetCurrencyByGivenName?givenName=${nameEnc}`);
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          const currencies = Array.from(new Set(data.map(c => c.Currency)));
+          // Only update if the currencies actually changed
+          const current = user?.availableCurrencies || [];
+          if (JSON.stringify(currencies.sort()) !== JSON.stringify([...current].sort())) {
+            updateUser({ availableCurrencies: currencies });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to refresh currencies from backend:', err);
+      }
+    };
+
+    fetchCurrencies();
+  }, [user?.profileData?.givenName]);
   
   const mockFxRates = {
     'USD-EUR': 0.92, 'EUR-USD': 1.09, 'USD-SGD': 1.34, 'SGD-USD': 0.75,
     'USD-GBP': 0.79, 'GBP-USD': 1.27, 'EUR-SGD': 1.45, 'SGD-EUR': 0.69,
-    'GBP-EUR': 1.17, 'EUR-GBP': 0.85, 'GBP-SGD': 1.70, 'SGD-GBP': 0.59
+    'GBP-EUR': 1.17, 'EUR-GBP': 0.85, 'GBP-SGD': 1.70, 'SGD-GBP': 0.59,
+    'MYR-SGD': 0.29, 'SGD-MYR': 3.41, 'IDR-SGD': 0.000085, 'SGD-IDR': 11765,
+    'THB-SGD': 0.038, 'SGD-THB': 26.3, 'VND-SGD': 0.000054, 'SGD-VND': 18500,
+    'PHP-SGD': 0.024, 'SGD-PHP': 41.7, 'CHF-SGD': 1.50, 'SGD-CHF': 0.67,
+    'CAD-SGD': 0.99, 'SGD-CAD': 1.01, 'USD-MYR': 4.56, 'MYR-USD': 0.22
   };
   
   const currentRate = mockFxRates[`${exchangeFrom}-${exchangeTo}`] || 1;
@@ -34,8 +65,10 @@ export default function Dashboard() {
     }
   };
 
+  const displayName = user?.profileData?.givenName || user?.name || 'User';
+
   const totalBalanceUSD = wallets.reduce((total, wallet) => {
-    const rateToUSD = mockFxRates[`${wallet.currency}-USD`] || 1;
+    const rateToUSD = mockFxRates[`${wallet.currency}-USD`] || (wallet.currency === 'USD' ? 1 : 0.75);
     return total + (wallet.currency === 'USD' ? wallet.balance : wallet.balance * rateToUSD);
   }, 0);
 
@@ -45,7 +78,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-            <p className="text-textSecondary mt-1">Welcome back, your multi-currency portfolio is performing well.</p>
+            <p className="text-textSecondary mt-1">Welcome back, <span className="text-primary font-medium">{displayName}</span>. Your multi-currency portfolio.</p>
           </div>
           <Button variant="secondary" className="hidden sm:inline-flex">
             <FileText className="w-4 h-4 mr-2" />

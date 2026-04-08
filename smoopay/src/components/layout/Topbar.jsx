@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { useMockStore } from '../../store/MockStore';
 
 export default function Topbar() {
-  const { theme, toggleTheme } = useMockStore();
+  const { theme, toggleTheme, user } = useMockStore();
+  const displayName = user?.profileData?.givenName || user?.name || 'User';
   return (
     <motion.header 
       initial={{ y: -100 }}
@@ -38,15 +39,11 @@ export default function Topbar() {
         </button>
         <div className="flex items-center gap-3 border-l border-border pl-4 cursor-pointer group">
           <div className="flex flex-col items-end">
-            <span className="text-sm font-medium group-hover:text-primary transition-colors">Alex Chen</span>
-            <span className="text-xs text-textSecondary">Admin Pro</span>
+            <span className="text-sm font-medium group-hover:text-primary transition-colors">{displayName}</span>
+            <span className="text-xs text-textSecondary">Corporate</span>
           </div>
-          <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary to-secondary">
-             <img 
-               src="https://i.pravatar.cc/150?u=alex" 
-               alt="User avatar" 
-               className="w-9 h-9 rounded-full border-2 border-background"
-             />
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-sm font-bold text-black">
+            {displayName.charAt(0).toUpperCase()}
           </div>
         </div>
       </div>
