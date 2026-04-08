@@ -1,24 +1,25 @@
-const BASE_URL = '/api-proxy';
+const BASE_URL_1 = '/api-proxy-1';
+const BASE_URL_2 = '/api-proxy-2';
 
 export const API_ENDPOINTS = {
   // Agreement Management
-  GET_AGREEMENTS: `${BASE_URL}/Agreement/rest/Agreement/GetAgreements`,
-  GET_ALL_INFO: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/GetAgreementAllInfo`,
-  UPDATE_AGREEMENT: `${BASE_URL}/Agreement/rest/Agreement/UpdateAgreement`,
-  DELETE_AGREEMENT: `${BASE_URL}/Agreement/rest/Agreement/DeleteAgreement`,
-  CREATE_AGREEMENT: `${BASE_URL}/Agreement/rest/Agreement/CreateAgreement`,
-  ACTIVATE_AGREEMENT: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/ActivateAgreement`,
+  GET_AGREEMENTS: `${BASE_URL_2}/Agreement/rest/Agreement/GetAgreements`,
+  GET_ALL_INFO: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/GetAgreementAllInfo`,
+  UPDATE_AGREEMENT: `${BASE_URL_2}/Agreement/rest/Agreement/UpdateAgreement`,
+  DELETE_AGREEMENT: `${BASE_URL_2}/Agreement/rest/Agreement/DeleteAgreement`,
+  CREATE_AGREEMENT: `${BASE_URL_2}/Agreement/rest/Agreement/CreateAgreement`,
+  ACTIVATE_AGREEMENT: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/ActivateAgreement`,
 
   // Milestone Lifecycle
-  CREATE_MILESTONE: `${BASE_URL}/Milestone/rest/Milestone/CreateMilestone`,
-  UPDATE_MILESTONE: `${BASE_URL}/Milestone/rest/Milestone/UpdateMilestone`,
-  DELETE_MILESTONE: `${BASE_URL}/Milestone/rest/Milestone/DeleteMilestone`,
-  UPDATE_STATUS: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/UpdateMilestoneStatus`,
-  APPROVE_MILESTONE: `${BASE_URL}/ManageEscrow/rest/ManageEscrow/ApproveMilestone`,
+  CREATE_MILESTONE: `${BASE_URL_2}/Milestone/rest/Milestone/CreateMilestone`,
+  UPDATE_MILESTONE: `${BASE_URL_2}/Milestone/rest/Milestone/UpdateMilestone`,
+  DELETE_MILESTONE: `${BASE_URL_2}/Milestone/rest/Milestone/DeleteMilestone`,
+  UPDATE_STATUS: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/UpdateMilestoneStatus`,
+  APPROVE_MILESTONE: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/ApproveMilestone`,
 
   // Credit Transfer (New)
-  GET_ACCOUNTS_BY_UEN: `${BASE_URL}/CreditTransfer/rest/CreditTransfer/GetAccountsByUENorCustId`,
-  CHARGE_FEE: `${BASE_URL}/CreditTransfer/rest/CreditTransfer/ChargeFee`,
+  GET_ACCOUNTS_BY_UEN: `${BASE_URL_1}/CreditTransfer/rest/CreditTransfer/GetAccountsByUENorCustId`,
+  CHARGE_FEE: `${BASE_URL_1}/CreditTransfer/rest/CreditTransfer/ChargeFee`,
 
   // Amazon S3 File Fetch
   FETCH_FILE: '/s3-proxy/SMULab_AmazonS3/rest/AmazonS3/FetchFile',
