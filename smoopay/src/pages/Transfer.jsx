@@ -40,13 +40,25 @@ export default function Transfer() {
   const senderCustomerId = "0000002892";
   const senderAccountId = "0000006181";
 
+  // Load UEN from session on mount
+  useEffect(() => {
+    const savedUEN = sessionStorage.getItem('last_recipient_uen');
+    if (savedUEN) {
+      setRecipientUEN(savedUEN);
+    }
+  }, []);
+
   const handleFetchAccounts = async () => {
     if (!recipientUEN) return;
     setIsLoading(true);
     setError(null);
     try {
-      const accounts = await transferService.fetchRecipientAccounts(recipientUEN);
+      const accounts = await transferService.fetchRecipientAccounts(recipientUEN, senderCustomerId);
       setRecipientAccounts(accounts || []);
+      
+      // Store UEN in session on success
+      sessionStorage.setItem('last_recipient_uen', recipientUEN);
+
       if (accounts && accounts.length > 0) {
         setSelectedAccountTo(accounts[0].accountId);
       } else {
@@ -64,16 +76,15 @@ export default function Transfer() {
     setIsLoading(true);
     setError(null);
     try {
-      const details = await transferService.calculateChargeFee(
-        { CustomerId: senderCustomerId, RecipientUEN: recipientUEN },
-        {
-          accountFrom: senderAccountId,
-          accountTo: selectedAccountTo,
-          transactionAmount: parseFloat(transferAmount),
-          transactionReferenceNumber: reference,
-          narrative: narrative || "Credit Transfer"
-        }
-      );
+      const details = await transferService.calculateChargeFee({
+        CustomerId: senderCustomerId,
+        RecipientUEN: recipientUEN,
+        AccountFrom: senderAccountId,
+        AccountTo: selectedAccountTo,
+        TransactionAmount: parseFloat(transferAmount),
+        TransactionReferenceNumber: reference,
+        Narrative: narrative || "Credit Transfer"
+      });
       setFeeDetails(details);
       setCurrentStep(3);
     } catch (err) {
