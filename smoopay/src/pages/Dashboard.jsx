@@ -10,7 +10,7 @@ import { cn } from '../lib/utils';
 import { getCurrencyFlag } from '../lib/currencyUtils';
 
 export default function Dashboard() {
-  const { wallets, transactions, exchangeCurrency } = useMockStore();
+  const { wallets, transactions, exchangeCurrency, user, updateUser } = useMockStore();
   
   const [exchangeFrom, setExchangeFrom] = useState(wallets[0]?.currency || 'SGD');
   const [exchangeTo, setExchangeTo] = useState(wallets.length > 1 ? wallets[1].currency : wallets[0]?.currency || 'SGD');
