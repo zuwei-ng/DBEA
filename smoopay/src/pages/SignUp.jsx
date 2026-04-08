@@ -20,7 +20,7 @@ import { cn } from '../lib/utils';
 
 const steps = [
   { id: 1, title: 'Business Identity', icon: Building2 },
-  { id: 2, title: 'Personnel', icon: Users },
+  { id: 2, title: 'Account Details', icon: Users },
   { id: 3, title: 'Financials', icon: Briefcase },
   { id: 4, title: 'KYC Verification', icon: ShieldCheck }
 ];
@@ -30,13 +30,129 @@ export default function SignUp() {
   const currentStep = user?.onboardingStep || 1;
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [verifiedData, setVerifiedData] = useState(null);
 
-  const nextStep = () => {
+  const [formData, setFormData] = useState({
+    givenName: '',
+    icNumber: '',
+    streetAddress: '',
+    postalCode: '',
+    country: 'Singapore',
+    preferredUserld: '',
+    emailAddress: '',
+    phoneCountryCode: '+65',
+    mobileNumber: '',
+    password: '',
+    monthlyRevenue: '',
+    industry: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const submitData = async () => {
+    try {
+      const annualSalary = (Number(formData.monthlyRevenue) || 0) * 12;
+      
+      const payload = {
+        // Compulsory
+        preferredUserld: formData.preferredUserld || 'demo01',
+        emailAddress: formData.emailAddress || 'demo@email.com',
+        password: formData.password || 'Test1234!',
+        icNumber: formData.icNumber || 'TESTUEN111',
+        givenName: formData.givenName || 'Demo Company',
+        streetAddress: formData.streetAddress || '1 Raffles Place',
+        postalCode: formData.postalCode || '048616',
+        phoneCountryCode: formData.phoneCountryCode || '+65',
+        mobileNumber: formData.mobileNumber || '82345678',
+        annualSalary: annualSalary > 0 ? annualSalary : 120000,
+        country: formData.country || 'Singapore',
+
+        // Optional filled with "-"
+        city: "-",
+        state: "-",
+        countryCode: "-",
+        phoneAreaCode: "-",
+        phoneLocalNumber: "-",
+        officeAddress1: "-",
+        officeAddress2: "-",
+        officeAddress3: "-",
+        officeContactNumber: "-",
+        officeContactNumberExt: "-",
+
+        // Backend only
+        tenantId: "600",
+        familyName: "-",
+        dateOfBirth: "2014-12-31",
+        gender: "-",
+        occupation: "-",
+        positionTitle: "-",
+        yearOfService: 0,
+        employerName: "-",
+        workingInSingapore: false,
+        createDepositAccount: true,
+        customerType: "200",
+        currency: "SGD"
+      };
+
+      // First API Call
+      const firstResponse = await fetch("https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/StoreCustomerCredential", {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!firstResponse.ok) {
+        console.error("StoreCustomerCredential failed:", await firstResponse.text());
+      }
+
+      // Second API Call
+      const username = "12173e30ec556fe4a951";
+      const pw = "2fbbd75fd60a8389b82719d2dbc37f1eb9ed226f3eb43cfa7d9240c72fd5+bfc89ad4-c17f-4fe9-82c2-918d29d59fe0";
+      const basicAuth = btoa(`${username}:${pw}`);
+
+      const secondResponse = await fetch("https://smuedu-dev.outsystemsenterprise.com/gateway/rest/customer/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Basic ${basicAuth}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!secondResponse.ok) {
+         console.error("Gateway Customer API failed:", await secondResponse.text());
+      }
+
+      // Third API Call (VerifyLogin)
+      const uenToUse = formData.icNumber || 'TESTUEN111';
+      const pwToUse = formData.password || 'Test1234!';
+      const verifyUrl = `https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/VerifyLogin?UEN=${encodeURIComponent(uenToUse)}&Password=${encodeURIComponent(pwToUse)}`;
+      
+      const verifyRes = await fetch(verifyUrl);
+      const verifyJson = await verifyRes.json();
+      
+      if (verifyJson.IsSuccess) {
+         console.log("Verify Login success:", verifyJson);
+         setVerifiedData(verifyJson);
+      } else {
+         console.error("Verify Login failed:", verifyJson.Message);
+      }
+    } catch (error) {
+       console.error("Submission error:", error);
+    }
+  };
+
+  const nextStep = async () => {
     if (currentStep < 4) {
       updateUser({ onboardingStep: currentStep + 1 });
     } else {
       // Finalize onboarding
       setIsProcessing(true);
+      await submitData();
     }
   };
 
@@ -55,14 +171,20 @@ export default function SignUp() {
           progress = 100;
           clearInterval(interval);
           setTimeout(() => {
-            updateUser({ onboardingStep: 5, isNewUser: false });
+            updateUser({ 
+              onboardingStep: 5, 
+              isNewUser: false, 
+              name: verifiedData?.GivenName || formData.givenName || 'Demo Company',
+              customerId: verifiedData?.CustomerId,
+              uen: verifiedData?.UEN
+            });
           }, 1000);
         }
         setScanProgress(progress);
       }, 200);
       return () => clearInterval(interval);
     }
-  }, [isProcessing]);
+  }, [isProcessing, updateUser, formData.givenName, verifiedData]);
 
   return (
     <div className="min-h-screen bg-background text-textPrimary p-6 md:p-12 overflow-y-auto transition-colors duration-500">
@@ -110,9 +232,9 @@ export default function SignUp() {
               transition={{ duration: 0.4 }}
             >
               <GlassCard className="p-8 md:p-12">
-                {currentStep === 1 && <BusinessStep />}
-                {currentStep === 2 && <PersonnelStep />}
-                {currentStep === 3 && <FinancialStep />}
+                {currentStep === 1 && <BusinessStep formData={formData} handleChange={handleChange} />}
+                {currentStep === 2 && <PersonnelStep formData={formData} handleChange={handleChange} />}
+                {currentStep === 3 && <FinancialStep formData={formData} handleChange={handleChange} />}
                 {currentStep === 4 && <VerificationStep />}
 
                 <div className="mt-12 flex justify-between">
@@ -169,7 +291,7 @@ export default function SignUp() {
   );
 }
 
-function BusinessStep() {
+function BusinessStep({ formData, handleChange }) {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold mb-2 text-textPrimary">Business Identity</h2>
@@ -178,68 +300,88 @@ function BusinessStep() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Trading Name</label>
-          <input type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Acme FinTech Ltd" />
+          <input name="givenName" value={formData.givenName} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Demo Company" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Registration Number</label>
-          <input type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. 202412345M" />
+          <input name="icNumber" value={formData.icNumber} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. TESTUEN111" />
         </div>
         <div className="md:col-span-2 space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Registered Address</label>
-          <input type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="123 Financial District, Suite 500" />
+          <input name="streetAddress" value={formData.streetAddress} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="1 Raffles Place" />
+        </div>
+        <div className="space-y-2">
+           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Postal Code</label>
+           <input name="postalCode" value={formData.postalCode} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. 048616" />
+        </div>
+        <div className="space-y-2">
+           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Country</label>
+           <input name="country" value={formData.country} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Singapore" />
         </div>
       </div>
     </div>
   );
 }
 
-function PersonnelStep() {
+function PersonnelStep({ formData, handleChange }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold mb-2 text-textPrimary">Key Personnel</h2>
-      <p className="text-textSecondary mb-8">Provide details for the Controlling Director or UBO.</p>
+      <h2 className="text-3xl font-bold mb-2 text-textPrimary">Account Details</h2>
+      <p className="text-textSecondary mb-8">Provide account credentials and contact details.</p>
       
-      <div className="space-y-6">
-        <div className="bg-surface-hover/20 p-6 rounded-2xl border border-border hover:border-primary/30 transition-all group">
-           <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform"><Users className="w-6 h-6" /></div>
-              <div>
-                 <div className="font-bold text-textPrimary">Director Information</div>
-                 <div className="text-xs text-textSecondary">Authorized Signatory</div>
-              </div>
-           </div>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" className="bg-background/40 border border-border rounded-lg px-4 py-2 text-sm outline-none focus:border-primary text-textPrimary" placeholder="Full Name" />
-              <input type="text" className="bg-background/40 border border-border rounded-lg px-4 py-2 text-sm outline-none focus:border-primary text-textPrimary" placeholder="Nationality" />
-           </div>
-        </div>
-        <Button variant="ghost" className="w-full border-2 border-dashed border-border text-textSecondary h-16 rounded-2xl hover:border-primary/50 hover:text-primary transition-all">
-           + Add Another Beneficial Owner
-        </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <div className="space-y-2">
+            <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Username</label>
+            <input name="preferredUserld" value={formData.preferredUserld} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. demo01" />
+         </div>
+         <div className="space-y-2">
+            <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Email Address</label>
+            <input name="emailAddress" value={formData.emailAddress} onChange={handleChange} type="email" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. demo@email.com" />
+         </div>
+         <div className="space-y-2">
+            <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Password</label>
+            <input name="password" value={formData.password} onChange={handleChange} type="password" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="Minimum 8 characters" />
+         </div>
+         <div className="space-y-2 flex gap-4">
+            <div className="w-1/3">
+              <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Code</label>
+              <input name="phoneCountryCode" value={formData.phoneCountryCode} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="+65" />
+            </div>
+            <div className="w-2/3">
+              <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Mobile Number</label>
+              <input name="mobileNumber" value={formData.mobileNumber} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="82345678" />
+            </div>
+         </div>
       </div>
     </div>
   );
 }
 
-function FinancialStep() {
+function FinancialStep({ formData, handleChange }) {
+  const industries = ['E-Commerce', 'Professional Services', 'Tech / SaaS', 'Logistic', 'Retail', 'Education'];
+  
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold mb-2 text-textPrimary">Financial Profile</h2>
       <p className="text-textSecondary mb-8">Select your industry to help us determine available wallets.</p>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {['E-Commerce', 'Professional Services', 'Tech / SaaS', 'Logistic', 'Retail', 'Education'].map(ind => (
-           <button key={ind} className="p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium text-center text-textPrimary">
+        {industries.map(ind => (
+           <button 
+             key={ind} 
+             onClick={() => handleChange({ target: { name: 'industry', value: ind } })} 
+             className={cn("p-4 rounded-xl border transition-all text-sm font-medium text-center", formData.industry === ind ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary hover:bg-primary/5 text-textPrimary")}
+           >
              {ind}
            </button>
         ))}
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-textSecondary uppercase tracking-wider block mb-2">Estimated Monthly Revenue (USD)</label>
+        <label className="text-sm font-medium text-textSecondary uppercase tracking-wider block mb-2">Estimated Monthly Revenue (SGD)</label>
         <div className="relative">
            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-bold">$</div>
-           <input type="number" className="w-full bg-surface-hover/20 border border-white/10 rounded-xl px-10 py-4 text-2xl font-bold focus:border-primary outline-none text-textPrimary" placeholder="100,000" />
+           <input name="monthlyRevenue" value={formData.monthlyRevenue} onChange={handleChange} type="number" className="w-full bg-surface-hover/20 border border-border rounded-xl px-10 py-4 text-2xl font-bold focus:border-primary outline-none text-textPrimary" placeholder="10000" />
         </div>
       </div>
     </div>

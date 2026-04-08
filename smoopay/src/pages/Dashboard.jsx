@@ -10,7 +10,7 @@ import { cn } from '../lib/utils';
 import { getCurrencyFlag } from '../lib/currencyUtils';
 
 export default function Dashboard() {
-  const { wallets, transactions, exchangeCurrency } = useMockStore();
+  const { wallets, transactions, exchangeCurrency, user } = useMockStore();
   
   const [exchangeFrom, setExchangeFrom] = useState('USD');
   const [exchangeTo, setExchangeTo] = useState('EUR');
@@ -42,12 +42,26 @@ export default function Dashboard() {
   return (
     <PageTransition>
       <div className="space-y-6 max-w-7xl mx-auto pb-12">
-        <div className="flex justify-between items-end">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-            <p className="text-textSecondary mt-1">Welcome back, your multi-currency portfolio is performing well.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
+              <div className="flex flex-wrap gap-2">
+                {user?.uen && (
+                  <span className="text-xs font-medium bg-surface-hover/50 text-textSecondary px-3 py-1 rounded-full border border-border">
+                    UEN: {user.uen}
+                  </span>
+                )}
+                {user?.customerId && (
+                  <span className="text-xs font-medium bg-surface-hover/50 text-textSecondary px-3 py-1 rounded-full border border-border">
+                    ID: {user.customerId}
+                  </span>
+                )}
+              </div>
+            </div>
+            <p className="text-textSecondary mt-2">Welcome back, <span className="text-textPrimary font-semibold">{user?.name || 'User'}</span>. Your multi-currency portfolio is performing well.</p>
           </div>
-          <Button variant="secondary" className="hidden sm:inline-flex">
+          <Button variant="secondary" className="hidden sm:inline-flex shrink-0">
             <FileText className="w-4 h-4 mr-2" />
             Download Statement
           </Button>
