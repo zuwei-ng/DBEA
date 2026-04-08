@@ -100,7 +100,7 @@ export function MockStoreProvider({ children }) {
         id: agreement.Id,
         title: agreement.Title,
         description: agreement.Description,
-        contractor: agreement.ContractorId || 'Unknown Contractor',
+        contractor: agreement.ContractorAccountId || 'Unknown Contractor',
         role: 'External Contractor',
         currency: agreement.Currency,
         amount: agreement.TransactionValue,

@@ -12,7 +12,7 @@ export default function CreateAgreement({ onBack, onSuccess }) {
     CreatedBy: "0000002892", // Hardcoded per user example
     Title: "",
     Description: "",
-    ContractorId: "",
+    ContractorAccountId: "",
     ContractorUen: "",
     TransactionValue: "",
     Currency: "USD",
@@ -126,19 +126,6 @@ export default function CreateAgreement({ onBack, onSuccess }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
             <div className="space-y-4">
               <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
-                <User className="w-4 h-4 text-primary" /> Contractor ID
-              </label>
-              <input 
-                required
-                type="text"
-                placeholder="e.g. 12345678B"
-                className={inputClasses}
-                value={formData.ContractorId}
-                onChange={e => setFormData({...formData, ContractorId: e.target.value})}
-              />
-            </div>
-            <div className="space-y-4">
-              <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" /> Contractor UEN
               </label>
               <input 
@@ -148,6 +135,19 @@ export default function CreateAgreement({ onBack, onSuccess }) {
                 className={inputClasses}
                 value={formData.ContractorUen}
                 onChange={e => setFormData({...formData, ContractorUen: e.target.value})}
+              />
+            </div>
+            <div className="space-y-4">
+              <label className="text-sm font-bold text-textSecondary uppercase tracking-wider flex items-center gap-2">
+                <User className="w-4 h-4 text-primary" /> Contractor Account ID
+              </label>
+              <input 
+                required
+                type="text"
+                placeholder="e.g. 12345678B"
+                className={inputClasses}
+                value={formData.ContractorAccountId}
+                onChange={e => setFormData({...formData, ContractorAccountId: e.target.value})}
               />
             </div>
           </div>
