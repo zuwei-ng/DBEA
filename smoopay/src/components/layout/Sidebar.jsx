@@ -20,7 +20,7 @@ export default function Sidebar() {
       initial={{ x: -250 }}
       animate={{ x: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-64 border-r border-border bg-surface/50 backdrop-blur-3xl hidden md:flex flex-col z-20 transition-colors"
+      className="w-64 border-r border-border bg-surface/50 backdrop-blur-3xl hidden md:flex flex-col relative z-[150] transition-colors"
     >
       <div className="h-16 flex items-center px-6 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">

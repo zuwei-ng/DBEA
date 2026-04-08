@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 
-export function GlassCard({ children, className, delay = 0, hoverEffect = false, animate = true }) {
+export function GlassCard({ children, className, delay = 0, hoverEffect = false, animate = true, onClick }) {
   const containerVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 15 },
     visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] } }
@@ -14,6 +14,7 @@ export function GlassCard({ children, className, delay = 0, hoverEffect = false,
       initial={animate ? "hidden" : false}
       animate={animate ? "visible" : false}
       whileHover={hoverEffect ? { y: -4, transition: { duration: 0.2 } } : {}}
+      onClick={onClick}
       className={cn(
         "glass-panel p-6 relative group transform-gpu",
         hoverEffect && "hover:shadow-[0_20px_40px_-15px_var(--glow-color)] hover:border-primary/20 transition-all duration-300",

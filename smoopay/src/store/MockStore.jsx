@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+import { API_ENDPOINTS } from '../lib/api';
 
 const mockTransactions = [
   { id: 'tx-1', date: '2026-03-21', description: 'Acme Corp API Services', amount: -2450.00, currency: 'USD', status: 'Completed' },
@@ -63,7 +65,7 @@ const MockStoreContext = createContext();
 export function MockStoreProvider({ children }) {
   const [theme, setTheme] = useState(localStorage.getItem('theme_v3') || 'light');
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
     localStorage.setItem('theme_v3', theme);
@@ -79,10 +81,46 @@ export function MockStoreProvider({ children }) {
 
   const [wallets, setWallets] = useState(initialWallets);
   const [transactions, setTransactions] = useState(mockTransactions);
-  const [milestones, setMilestones] = useState(mockMilestones);
+  const [escrows, setEscrows] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('isAuth') === 'true');
   const [user, setUser] = useState(persistedUser);
+
+  const fetchAgreements = async () => {
+    try {
+      console.log("MockStore: Starting fetchAgreements...");
+      setIsLoading(true);
+      const response = await fetch(`${API_ENDPOINTS.GET_AGREEMENTS}?CreatedBy=0000002892`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      console.log("MockStore: Data received from API:", data);
+      
+      const mappedEscrows = data.map(agreement => ({
+        id: agreement.Id,
+        title: agreement.Title,
+        description: agreement.Description,
+        contractor: agreement.ContractorId || 'Unknown Contractor',
+        role: 'External Contractor',
+        currency: agreement.Currency,
+        amount: agreement.TransactionValue,
+        valuePaid: agreement.ValuePaid || 0,
+        status: agreement.Status === 'Ongoing' ? 'Active' : agreement.Status
+      }));
+      
+      console.log("MockStore: Mapped escrows:", mappedEscrows);
+      setEscrows(mappedEscrows);
+    } catch (error) {
+      console.error("MockStore: Failed to fetch agreements:", error);
+    } finally {
+      setIsLoading(false);
+      console.log("MockStore: fetchAgreements complete.");
+    }
+  };
+
+  useEffect(() => {
+    fetchAgreements();
+  }, []);
 
   const login = (userData) => {
     setIsAuthenticated(true);
@@ -132,13 +170,21 @@ export function MockStoreProvider({ children }) {
     setTransactions(prev => [tx, ...prev]);
   };
 
-  const updateMilestone = (id, updates) => {
-    setMilestones(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+  const updateMilestone = (escrowId, milestoneId, updates) => {
+    setEscrows(prev => prev.map(e => {
+      if (e.id === escrowId) {
+        return {
+          ...e,
+          milestones: e.milestones.map(m => m.id === milestoneId ? { ...m, ...updates } : m)
+        };
+      }
+      return e;
+    }));
   };
 
   return (
     <MockStoreContext.Provider value={{
-      theme, toggleTheme, wallets, transactions, milestones, 
+      theme, toggleTheme, wallets, transactions, escrows, isLoading, fetchAgreements,
       exchangeCurrency, addTransaction, updateMilestone,
       isAuthenticated, user, login, logout, signUp, updateUser
     }}>
