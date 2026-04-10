@@ -12,8 +12,7 @@ import { transferService } from '../services/transferService';
 const steps = [
   { id: 1, name: 'Recipient' },
   { id: 2, name: 'Details' },
-  { id: 3, name: 'Confirm' },
-  { id: 4, name: 'Success' },
+  { id: 3, name: 'Success' },
 ];
 
 export default function Transfer() {
@@ -27,8 +26,10 @@ export default function Transfer() {
   const [selectedAccountTo, setSelectedAccountTo] = useState('');
 
   // Step 2: Amount & Description
+  // Step 2: Amount & Description
   const [transferAmount, setTransferAmount] = useState('');
-  const [sourceWallet, setSourceWallet] = useState('SGD'); // Default to SGD for testing
+  const [sourceAccountId, setSourceAccountId] = useState('');
+  const [senderAccounts, setSenderAccounts] = useState([]);
   const [reference, setReference] = useState(`TXN-${Date.now().toString().slice(-6)}`);
   const [narrative, setNarrative] = useState('');
 
@@ -36,17 +37,33 @@ export default function Transfer() {
   const [feeDetails, setFeeDetails] = useState(null);
   const [error, setError] = useState(null);
 
-  // Common IDs - these should ideally come from user store
-  const senderCustomerId = "0000002892";
-  const senderAccountId = "0000006181";
+  const senderCustomerId = user?.customerId || "0000002892";
 
-  // Load UEN from session on mount
+  // Load UEN from session and fetch sender accounts on mount
   useEffect(() => {
     const savedUEN = sessionStorage.getItem('last_recipient_uen');
     if (savedUEN) {
       setRecipientUEN(savedUEN);
     }
-  }, []);
+
+    const fetchSenderAccounts = async () => {
+      if (!user?.uen && !user?.customerId) return;
+      const identifier = user?.uen || user?.customerId;
+      try {
+        const url = `https://personal-urfnoedc.outsystemscloud.com/CreditTransfer/rest/CreditTransfer/GetAccountsByUENorCustId?UEN=${encodeURIComponent(identifier)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch accounts');
+        const data = await res.json();
+        setSenderAccounts(data || []);
+        if (data && data.length > 0) {
+          setSourceAccountId(data[0].accountId);
+        }
+      } catch (err) {
+        console.error("Transfer sender account fetch error:", err);
+      }
+    };
+    fetchSenderAccounts();
+  }, [user]);
 
   const handleFetchAccounts = async () => {
     if (!recipientUEN) return;
@@ -72,43 +89,50 @@ export default function Transfer() {
     }
   };
 
-  const handleRequestFee = async () => {
+  const handleNext = () => {
+    if (currentStep === 1) setCurrentStep(2);
+  };
+
+  const handleBack = () => setCurrentStep(prev => prev - 1);
+
+  const handleConfirm = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const details = await transferService.calculateChargeFee({
-        CustomerId: senderCustomerId,
-        RecipientUEN: recipientUEN,
-        AccountFrom: senderAccountId,
-        AccountTo: selectedAccountTo,
-        TransactionAmount: parseFloat(transferAmount),
-        TransactionReferenceNumber: reference,
-        Narrative: narrative || "Credit Transfer"
+      const url = `https://personal-urfnoedc.outsystemscloud.com/CreditTransfer/rest/CreditTransfer/ChargeFee?CustomerId=${encodeURIComponent(senderCustomerId)}&RecipientUEN=${encodeURIComponent(recipientUEN)}`;
+      
+      const payload = {
+        accountFrom: sourceAccountId,
+        accountTo: selectedAccountTo,
+        transactionAmount: parseFloat(transferAmount),
+        transactionReferenceNumber: reference,
+        narrative: narrative || "Credit Transfer"
+      };
+
+      const res = await fetch(url, {
+        method: 'POST', // Assuming POST for JSON body
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
-      setFeeDetails(details);
+      
+      if (!res.ok) {
+        // You could also parse res.json() to see if the OutSystems backend returns a specific human-readable message
+        throw new Error('Failed to complete transfer.');
+      }
+      
       setCurrentStep(3);
     } catch (err) {
-      setError(err.message || "Failed to calculate fees. Please try again.");
+      console.error("Transfer error:", err);
+      setError("Failed to execute transfer. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNext = () => {
-    if (currentStep === 1) setCurrentStep(2);
-    else if (currentStep === 2) handleRequestFee();
-  };
-
-  const handleBack = () => setCurrentStep(prev => prev - 1);
-
-  const handleConfirm = () => {
-    setIsLoading(true);
-    // Simulate final dispatch
-    setTimeout(() => {
-      setIsLoading(false);
-      setCurrentStep(4);
-    }, 1500);
-  };
+  const selectedSenderAccount = senderAccounts.find(a => a.accountId === sourceAccountId);
+  const displaySourceCurrency = selectedSenderAccount?.Currency || 'SGD';
 
   return (
     <PageTransition>
@@ -118,7 +142,7 @@ export default function Transfer() {
         {/* Stepper */}
         <div className="relative mb-12">
           <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -z-10 -translate-y-1/2 rounded-full"></div>
-          <div className="absolute top-1/2 left-0 h-0.5 bg-primary -z-10 -translate-y-1/2 transition-all duration-500 rounded-full" style={{ width: `${((currentStep - 1) / 3) * 100}%` }}></div>
+          <div className="absolute top-1/2 left-0 h-0.5 bg-primary -z-10 -translate-y-1/2 transition-all duration-500 rounded-full" style={{ width: `${((currentStep - 1) / 2) * 100}%` }}></div>
 
           <div className="flex justify-between w-full">
             {steps.map(step => {
@@ -258,13 +282,13 @@ export default function Transfer() {
                       <div className="bg-surface-hover/20 p-5 rounded-2xl border border-border">
                         <label className="text-sm text-textSecondary mb-2 block font-medium uppercase tracking-wider">Source Wallet</label>
                         <select
-                          value={sourceWallet}
-                          onChange={e => setSourceWallet(e.target.value)}
+                          value={sourceAccountId}
+                          onChange={e => setSourceAccountId(e.target.value)}
                           className="w-full bg-transparent text-xl font-semibold focus:outline-none border-b border-border pb-2 cursor-pointer appearance-none text-textPrimary"
                         >
-                          {wallets.map(w => (
-                            <option key={w.currency} value={w.currency} className="bg-background text-sm">
-                              {getCurrencyFlag(w.currency)} {w.currency} (Bal: {w.balance.toLocaleString()})
+                          {senderAccounts.map(acc => (
+                            <option key={acc.accountId} value={acc.accountId} className="bg-background text-sm">
+                              {getCurrencyFlag(acc.Currency)} {acc.Currency} (Bal: {acc.balance?.toLocaleString(undefined, { minimumFractionDigits: 2 })})
                             </option>
                           ))}
                         </select>
@@ -309,9 +333,9 @@ export default function Transfer() {
                   </div>
                   <div className="mt-8 flex justify-between">
                     <Button variant="ghost" onClick={handleBack}>Back</Button>
-                    <Button onClick={handleNext} disabled={!transferAmount || parseFloat(transferAmount) <= 0 || isLoading}>
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Calculate Fees <ChevronRight className="w-4 h-4 ml-1" />
+                    <Button onClick={handleConfirm} disabled={!transferAmount || parseFloat(transferAmount) <= 0 || isLoading} pulse>
+                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                      Confirm & Send
                     </Button>
                   </div>
                 </GlassCard>
@@ -324,91 +348,8 @@ export default function Transfer() {
               </motion.div>
             )}
 
-            {currentStep === 3 && feeDetails && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <GlassCard>
-                  <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-primary" /> Review Details
-                  </h2>
-
-                  <div className="space-y-6">
-                    <div className="bg-primary/5 border border-primary/10 rounded-2xl p-8 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Building2 className="w-24 h-24" />
-                      </div>
-                      <div className="text-sm text-textSecondary text-center mb-1 font-bold uppercase tracking-widest">Amount to Transfer</div>
-                      <div className="text-5xl font-bold text-center text-textPrimary flex justify-center items-center gap-3">
-                        {parseFloat(transferAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        <span className="text-2xl text-primary">{sourceWallet}</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-surface-hover/20 border border-border rounded-2xl p-5 space-y-4">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mb-1">Transferrer</span>
-                          <span className="font-bold text-textPrimary">{feeDetails.TransferrerName || 'You'}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mb-1">From Account</span>
-                          <span className="font-mono text-sm text-textPrimary">{senderAccountId}</span>
-                        </div>
-                      </div>
-
-                      <div className="bg-surface-hover/20 border border-border rounded-2xl p-5 space-y-4">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mb-1">Recipient</span>
-                          <span className="font-bold text-textPrimary">{feeDetails.RecipientName || 'Recipient Business'}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mb-1">To Account</span>
-                          <span className="font-mono text-sm text-textPrimary">{selectedAccountTo}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-surface-hover/10 rounded-2xl border border-border/50 p-6">
-                      <h4 className="text-xs font-bold text-textSecondary uppercase tracking-widest mb-4 border-b border-border pb-2">Fee Summary</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-textSecondary">Transaction Fee</span>
-                          <span className="font-bold text-primary">{feeDetails.FeeDeducted?.toFixed(2) || '0.00'} {sourceWallet}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-textSecondary">Fee Type</span>
-                          <span className="font-medium text-textPrimary">{feeDetails.FeeCode || 'Standard'}</span>
-                        </div>
-                        <div className="pt-3 border-t border-border mt-3 flex justify-between items-center">
-                          <span className="text-textPrimary font-bold">Total Deduction</span>
-                          <span className="text-xl font-bold bg-primary/10 px-3 py-1 rounded-lg text-primary">
-                            {(parseFloat(transferAmount) + (feeDetails.FeeDeducted || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })} {sourceWallet}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 items-start p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl">
-                      <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-600/80 leading-relaxed font-medium">
-                        Please verify the recipient details carefully. Once confirmed, funds will be immediately deducted from your account.
-                        <strong> Reference: {reference}</strong>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-12 flex justify-between">
-                    <Button variant="ghost" onClick={handleBack}>Back</Button>
-                    <Button onClick={handleConfirm} disabled={isLoading} pulse>
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                      Confirm & Send
-                    </Button>
-                  </div>
-                </GlassCard>
-              </motion.div>
-            )}
-
-            {currentStep === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+            {currentStep === 3 && (
+              <motion.div key="step3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                 <GlassCard className="text-center py-20 flex flex-col items-center">
                   <div className="w-24 h-24 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(52,211,153,0.3)]">
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 10, delay: 0.2 }}>
@@ -418,7 +359,7 @@ export default function Transfer() {
                   <h2 className="text-3xl font-bold mb-4 text-textPrimary">Transfer Successful</h2>
                   <div className="space-y-2 mb-10">
                     <p className="text-textSecondary max-w-sm">
-                      Your transfer of <span className="text-textPrimary font-bold">{transferAmount} {sourceWallet}</span> has been successfully dispatched.
+                      Your transfer of <span className="text-textPrimary font-bold">{transferAmount} {displaySourceCurrency}</span> has been successfully dispatched.
                     </p>
                     <div className="bg-surface-hover/20 px-4 py-2 rounded-lg inline-block text-xs font-mono text-textSecondary border border-border">
                       REF: {reference}
