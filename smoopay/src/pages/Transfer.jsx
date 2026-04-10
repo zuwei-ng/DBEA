@@ -3,6 +3,7 @@ import { PageTransition } from '../components/layout/PageTransition';
 import { GlassCard } from '../components/ui/GlassCard';
 import { Button } from '../components/ui/Button';
 import { useMockStore } from '../store/MockStore';
+import { InvoiceModal } from '../components/ui/InvoiceModal';
 import { Check, ChevronDown, ChevronRight, Building2, User, Globe, AlertCircle, Search, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -36,6 +37,8 @@ export default function Transfer() {
   // Step 3: Fee Preview
   const [feeDetails, setFeeDetails] = useState(null);
   const [error, setError] = useState(null);
+  const [completedTxDetails, setCompletedTxDetails] = useState(null);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   const senderCustomerId = user?.customerId || "0000002892";
 
@@ -118,9 +121,16 @@ export default function Transfer() {
       });
       
       if (!res.ok) {
-        // You could also parse res.json() to see if the OutSystems backend returns a specific human-readable message
         throw new Error('Failed to complete transfer.');
       }
+      
+      let outData = null;
+      try {
+        outData = await res.json();
+      } catch (e) {
+        // Ignored if API returns empty body
+      }
+      setCompletedTxDetails(outData || payload);
       
       setCurrentStep(3);
     } catch (err) {
@@ -366,8 +376,9 @@ export default function Transfer() {
                     </div>
                   </div>
 
-                  <div className="flex justify-center w-full">
-                    <Button onClick={() => window.location.href = '/'} className="px-12 shadow-glow">Back to Dashboard</Button>
+                  <div className="flex justify-center w-full gap-4 mt-8">
+                    <Button variant="secondary" onClick={() => window.location.href = '/'} className="px-8 shadow-glass bg-surface">Back to Dashboard</Button>
+                    <Button onClick={() => setShowInvoice(true)} className="px-8 shadow-glow">View Invoice</Button>
                   </div>
                 </GlassCard>
               </motion.div>
@@ -375,6 +386,21 @@ export default function Transfer() {
           </AnimatePresence>
         </div>
       </div>
+      
+      {/* Invoice Modal Integration */}
+      <InvoiceModal 
+        isOpen={showInvoice} 
+        onClose={() => setShowInvoice(false)} 
+        transaction={completedTxDetails ? {
+          ...completedTxDetails,
+          id: completedTxDetails.ReferenceNumber || completedTxDetails.transactionReferenceNumber || reference,
+          date: new Date(completedTxDetails.TransferDateTime || completedTxDetails.transactionDate || Date.now()).toLocaleDateString(),
+          description: `Transfer to ${completedTxDetails.RecipientName || completedTxDetails.accountTo}`,
+          amount: -(completedTxDetails.TransactionAmount || completedTxDetails.transactionAmount || transferAmount),
+          currency: completedTxDetails.AccountFromCurrency || displaySourceCurrency,
+          status: 'Completed'
+        } : null} 
+      />      
     </PageTransition>
   );
 }

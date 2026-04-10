@@ -1,13 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Printer, Download, CheckCircle2 } from 'lucide-react';
+import { X, Printer, Download, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from './Button';
+import html2pdf from 'html2pdf.js';
 
 export function InvoiceModal({ isOpen, onClose, transaction }) {
   if (!isOpen || !transaction) return null;
 
   const invoiceNumber = `INV-${Math.abs(transaction.amount * 100).toString().substring(0,6)}-${new Date().getFullYear()}`;
   const isPaid = transaction.status === 'Completed' || transaction.status === 'Paid';
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    try {
+      const element = document.getElementById('invoice-document');
+      const opt = {
+        margin: [0.5, 0.5],
+        filename: `${invoiceNumber}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("PDF generation error:", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const amountToDisplay = transaction.TransactionAmount ? parseFloat(transaction.TransactionAmount) : Math.abs(transaction.amount || 0);
+  const feeDeducted = transaction.FeeDeducted ? parseFloat(transaction.FeeDeducted) : 0;
+  const totalAmount = amountToDisplay + feeDeducted;
+  
+  const fromCurrency = transaction.AccountFromCurrency || transaction.currency;
+  const toCurrency = transaction.AccountToCurrency;
+  
+  const transferrerName = transaction.TransferrerName || "Corporate Account";
+  const recipientName = transaction.RecipientName || transaction.description?.replace?.('Transfer to ', '') || "Beneficiary";
 
   return (
     <AnimatePresence>
@@ -33,11 +64,12 @@ export function InvoiceModal({ isOpen, onClose, transaction }) {
                {isPaid && <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> PAID</span>}
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="secondary" size="sm" className="hidden sm:flex" onClick={() => window.print()}>
+              <Button variant="secondary" size="sm" className="hidden sm:flex border border-white/20 hover:border-white/40" onClick={() => window.print()}>
                 <Printer className="w-4 h-4 mr-2" /> Print
               </Button>
-              <Button variant="primary" size="sm" className="hidden sm:flex">
-                <Download className="w-4 h-4 mr-2" /> PDF
+              <Button variant="primary" size="sm" className="hidden sm:flex transition-all hover:scale-105 shadow-glow" onClick={handleDownloadPDF} disabled={isDownloading}>
+                {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />} 
+                {isDownloading ? 'Generating...' : 'PDF'}
               </Button>
               <div className="w-px h-6 bg-[#ffffff]/10 mx-2"></div>
               <button onClick={onClose} className="p-2 text-textSecondary hover:text-white hover:bg-[#ffffff]/10 rounded-full transition-colors">
@@ -47,10 +79,10 @@ export function InvoiceModal({ isOpen, onClose, transaction }) {
           </div>
 
           {/* Invoice Paper Wrapper - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-black/60 flex justify-center print:bg-[#ffffff] print:p-0 print:overflow-visible">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-black/60 print:bg-[#ffffff] print:p-0 print:overflow-visible">
              
              {/* The Invoice Document */}
-             <div className="bg-[#ffffff] w-full max-w-3xl min-h-[800px] shadow-2xl rounded-sm p-10 sm:p-16 text-gray-800 relative isolate print:shadow-none print:m-0 print:w-full">
+             <div id="invoice-document" className="mx-auto bg-[#ffffff] w-full max-w-3xl min-h-[800px] h-max shadow-2xl rounded-sm p-10 sm:p-16 text-gray-800 relative isolate print:shadow-none print:m-0 print:w-full">
                 {/* Watermark */}
                 {isPaid && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden opacity-[0.03] z-0">
@@ -89,12 +121,22 @@ export function InvoiceModal({ isOpen, onClose, transaction }) {
                 </div>
 
                 {/* Bill To */}
-                <div className="mb-12 relative z-10">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2">Billed To</h3>
-                  <p className="font-bold text-lg text-gray-900">{transaction.description.replace('Transfer to ', '')}</p>
-                  <div className="text-sm text-gray-500 mt-1 space-y-1">
-                    <p>Corporate Account</p>
-                    <p>contact@clientdomain.com</p>
+                <div className="mb-12 relative z-10 flex justify-between gap-8">
+                  <div className="flex-1">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2">Billed To</h3>
+                    <p className="font-bold text-lg text-gray-900">{transferrerName}</p>
+                    <div className="text-sm text-gray-500 mt-1 space-y-1">
+                      <p>Account: {transaction.AccountFrom || "Default Wallet"}</p>
+                      <p>Currency Base: {fromCurrency}</p>
+                    </div>
+                  </div>
+                  <div className="flex-1 text-right">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-100 pb-2">Transfer Recipient</h3>
+                    <p className="font-bold text-lg text-gray-900">{recipientName}</p>
+                    <div className="text-sm text-gray-500 mt-1 space-y-1">
+                      <p>Account: {transaction.AccountTo || "Beneficiary Wallet"}</p>
+                      {toCurrency && <p>Receiving Currency: {toCurrency}</p>}
+                    </div>
                   </div>
                 </div>
 
@@ -111,19 +153,27 @@ export function InvoiceModal({ isOpen, onClose, transaction }) {
                     <tbody className="text-gray-600 divide-y divide-gray-100">
                       <tr>
                         <td className="py-4">
-                          <p className="font-medium text-gray-900">{transaction.description}</p>
-                          <p className="text-xs text-gray-400 mt-1">Transaction Ref: {transaction.id}</p>
+                          <p className="font-medium text-gray-900">Principal Transfer Amount</p>
+                          <p className="text-xs text-gray-400 mt-1">Narrative: {transaction.Narrative || transaction.narrative || "Funds Transfer"}</p>
                         </td>
                         <td className="py-4 text-center">1</td>
-                        <td className="py-4 text-right font-medium">{Math.abs(transaction.amount).toLocaleString(undefined, {minimumFractionDigits:2})} {transaction.currency}</td>
+                        <td className="py-4 text-right font-medium">{amountToDisplay.toLocaleString(undefined, {minimumFractionDigits:2})} {fromCurrency}</td>
                       </tr>
-                      {Math.abs(transaction.amount) > 1000 && (
+                      {feeDeducted > 0 && (
                         <tr>
-                          <td className="py-4 border-b border-gray-100">
-                            <p className="font-medium border border-cyan-200 bg-cyan-50 text-cyan-700 px-2 py-1 rounded inline-block text-xs">Premium Plan Perk: Flat Fees Waived</p>
+                          <td className="py-4">
+                            <p className="font-medium text-gray-900">Operator / Network Fee</p>
+                            <p className="text-xs text-gray-400 mt-1">Code: {transaction.FeeCode || "STANDARD_FEE"}</p>
                           </td>
-                          <td className="py-4 text-center border-b border-gray-100">1</td>
-                          <td className="py-4 text-right text-gray-400 line-through border-b border-gray-100">15.00 {transaction.currency}</td>
+                          <td className="py-4 text-center">1</td>
+                          <td className="py-4 text-right font-medium">{feeDeducted.toLocaleString(undefined, {minimumFractionDigits:2})} {fromCurrency}</td>
+                        </tr>
+                      )}
+                      {toCurrency && toCurrency !== fromCurrency && (
+                        <tr>
+                          <td className="py-4 border-b border-gray-100" colSpan={3}>
+                            <p className="text-xs text-cyan-600 font-medium">Note: Destination account will be dynamically credited in <strong>{toCurrency}</strong> subject to prevailing exchange rates.</p>
+                          </td>
                         </tr>
                       )}
                     </tbody>
@@ -135,16 +185,16 @@ export function InvoiceModal({ isOpen, onClose, transaction }) {
                   <div className="w-full sm:w-1/2">
                     <div className="space-y-3 text-sm text-gray-500">
                       <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span className="font-medium text-gray-900">{Math.abs(transaction.amount).toLocaleString(undefined, {minimumFractionDigits:2})} {transaction.currency}</span>
+                        <span>Transfer Base</span>
+                        <span className="font-medium text-gray-900">{amountToDisplay.toLocaleString(undefined, {minimumFractionDigits:2})} {fromCurrency}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tax (0%)</span>
-                        <span className="font-medium text-gray-900">0.00 {transaction.currency}</span>
+                        <span>Transaction Fees</span>
+                        <span className="font-medium text-gray-900">{feeDeducted.toLocaleString(undefined, {minimumFractionDigits:2})} {fromCurrency}</span>
                       </div>
                       <div className="flex justify-between items-center border-t-2 border-gray-800 pt-3 mt-3">
-                        <span className="font-bold text-gray-900 text-base">Total {isPaid ? 'Paid' : 'Due'}</span>
-                        <span className="font-bold text-cyan-600 text-xl">{Math.abs(transaction.amount).toLocaleString(undefined, {minimumFractionDigits:2})} {transaction.currency}</span>
+                        <span className="font-bold text-gray-900 text-base">Total {isPaid ? 'Deducted' : 'Due'}</span>
+                        <span className="font-bold text-cyan-600 text-xl">{totalAmount.toLocaleString(undefined, {minimumFractionDigits:2})} {fromCurrency}</span>
                       </div>
                     </div>
                   </div>

@@ -6,8 +6,11 @@ import Topbar from './components/layout/Topbar';
 import Dashboard from './pages/Dashboard';
 import Transfer from './pages/Transfer';
 import Escrow from './pages/Escrow';
+import EscrowList from './pages/EscrowList';
+import CreateAgreement from './pages/CreateAgreement';
 import ManageCurrencies from './pages/ManageCurrencies';
 import TransactionHistory from './pages/TransactionHistory';
+import InvoicesList from './pages/InvoicesList';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import { cn } from './lib/utils';
@@ -36,9 +39,11 @@ function AppContent() {
               <Route path="/signup" element={<SignUp />} />
               <Route path="/" element={needsOnboarding ? <Navigate to="/signup" replace /> : <Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/transfer" element={<Transfer />} />
               <Route path="/escrow" element={<Escrow />} />
+              <Route path="/escrow/new" element={<CreateAgreement />} />
+              <Route path="/transfer" element={<Transfer />} />
               <Route path="/transactions" element={<TransactionHistory />} />
+              <Route path="/invoices" element={<InvoicesList />} />
               <Route path="/manage-currencies" element={<ManageCurrencies />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

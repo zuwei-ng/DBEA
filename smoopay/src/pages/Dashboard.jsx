@@ -4,13 +4,13 @@ import { GlassCard } from '../components/ui/GlassCard';
 import { Button } from '../components/ui/Button';
 import { InvoiceModal } from '../components/ui/InvoiceModal';
 import { useMockStore } from '../store/MockStore';
-import { ArrowRightLeft, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Receipt } from 'lucide-react';
+import { ArrowRightLeft, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Receipt, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { getCurrencyFlag } from '../lib/currencyUtils';
 
 export default function Dashboard() {
-  const { wallets, transactions, exchangeCurrency, user, updateUser } = useMockStore();
+  const { wallets, exchangeCurrency, user, updateUser } = useMockStore();
   
   const [exchangeFrom, setExchangeFrom] = useState(wallets[0]?.currency || 'SGD');
   const [exchangeTo, setExchangeTo] = useState(wallets.length > 1 ? wallets[1].currency : wallets[0]?.currency || 'SGD');
@@ -43,6 +43,63 @@ export default function Dashboard() {
     };
     fetchAccounts();
   }, [user]);
+
+  const [dashboardTransactions, setDashboardTransactions] = useState([]);
+  const [isLoadingTx, setIsLoadingTx] = useState(false);
+
+  useEffect(() => {
+    const fetchAllTransactions = async () => {
+      if (!accounts || accounts.length === 0) return;
+      setIsLoadingTx(true);
+      
+      try {
+        const username = "12173e30ec556fe4a951";
+        const password = "2fbbd75fd60a8389b82719d2dbc37f1eb9ed226f3eb43cfa7d9240c72fd5+bfc89ad4-c17f-4fe9-82c2-918d29d59fe0";
+        const authHeader = 'Basic ' + window.btoa(username + ':' + password);
+        
+        const d = new Date();
+        const apiEndDate = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+        d.setMonth(d.getMonth() - 1);
+        const apiStartDate = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+
+        const promises = accounts.map(async (acc) => {
+          const url = `https://smuedu-dev.outsystemsenterprise.com/gateway/rest/account/${encodeURIComponent(acc.accountId)}/transactions?PageNo=1&PageSize=3&StartDate=${apiStartDate}&EndDate=${apiEndDate}`;
+          const res = await fetch(url, {
+            headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' }
+          });
+          if (!res.ok) return [];
+          const data = await res.json();
+          const txs = data.Data || data || [];
+          
+          return txs.map(tx => {
+            const isPositive = tx.accountTo === acc.accountId && tx.accountFrom !== acc.accountId;
+            const amt = parseFloat(tx.transactionAmount || tx.amount || tx.Amount || 0);
+            return {
+              ...tx,
+              id: tx.transactionId || tx.Id || tx.reference || Math.random().toString(),
+              date: new Date(tx.transactionDate || tx.date || tx.Date || new Date()).toLocaleDateString(),
+              description: tx.narrative || tx.description || tx.Narration || 'Transfer',
+              amount: isPositive ? amt : -amt,
+              currency: tx.currency || acc.Currency || 'SGD',
+              status: tx.status || 'Completed',
+              rawDate: new Date(tx.transactionDate || tx.date || tx.Date || new Date())
+            };
+          });
+        });
+
+        const results = await Promise.all(promises);
+        const aggregated = results.flat();
+        aggregated.sort((a, b) => b.rawDate - a.rawDate);
+        
+        setDashboardTransactions(aggregated.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to fetch recent transactions:", err);
+      } finally {
+        setIsLoadingTx(false);
+      }
+    };
+    fetchAllTransactions();
+  }, [accounts]);
 
   // Fetch latest currencies from backend on dashboard load
   useEffect(() => {
@@ -242,9 +299,15 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-8">
-          <h3 className="text-xl font-bold mb-4">Recent Transactions</h3>
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            Recent Transactions
+            {isLoadingTx && <Loader2 className="w-4 h-4 text-primary animate-spin" />}
+          </h3>
           <div className="space-y-3">
-            {transactions.slice(0, 5).map((tx, idx) => (
+            {dashboardTransactions.length === 0 && !isLoadingTx && (
+              <div className="text-sm text-textSecondary px-2">No recent transactions found.</div>
+            )}
+            {dashboardTransactions.map((tx, idx) => (
               <GlassCard key={tx.id} className="!p-0 overflow-hidden" delay={0.3 + (idx * 0.1)}>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 hover:bg-white/[0.04] transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4 w-full sm:w-auto mb-3 sm:mb-0">
