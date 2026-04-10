@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useMockStore } from '../../store/MockStore';
-import { LayoutDashboard, Send, ShieldCheck, UserCheck, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Send, ShieldCheck, UserCheck, Settings, LogOut, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 
@@ -9,6 +9,7 @@ const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { name: 'Transfer', icon: Send, path: '/transfer' },
   { name: 'Escrow', icon: ShieldCheck, path: '/escrow' },
+  { name: 'Transactions', icon: FileText, path: '/transactions' },
   { name: 'Currencies & Limits', icon: UserCheck, path: '/manage-currencies' },
 ];
 

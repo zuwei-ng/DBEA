@@ -17,6 +17,32 @@ export default function Dashboard() {
   const [exchangeAmount, setExchangeAmount] = useState('');
   
   const [selectedTx, setSelectedTx] = useState(null); // Used to display invoice modal
+  const [accounts, setAccounts] = useState([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+
+  // Fetch true accounts from API
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!user?.uen && !user?.customerId) {
+        setIsLoadingAccounts(false);
+        return;
+      }
+      const identifier = user?.uen || user?.customerId;
+      
+      try {
+        const url = `https://personal-urfnoedc.outsystemscloud.com/CreditTransfer/rest/CreditTransfer/GetAccountsByUENorCustId?UEN=${encodeURIComponent(identifier)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch accounts');
+        const data = await res.json();
+        setAccounts(data || []);
+      } catch (err) {
+        console.error("Dashboard account fetch error:", err);
+      } finally {
+        setIsLoadingAccounts(false);
+      }
+    };
+    fetchAccounts();
+  }, [user]);
 
   // Fetch latest currencies from backend on dashboard load
   useEffect(() => {
@@ -67,9 +93,9 @@ export default function Dashboard() {
 
   const displayName = user?.profileData?.givenName || user?.name || 'User';
 
-  const totalBalanceUSD = wallets.reduce((total, wallet) => {
-    const rateToUSD = mockFxRates[`${wallet.currency}-USD`] || (wallet.currency === 'USD' ? 1 : 0.75);
-    return total + (wallet.currency === 'USD' ? wallet.balance : wallet.balance * rateToUSD);
+  const totalBalanceUSD = accounts.reduce((total, acc) => {
+    const rateToUSD = mockFxRates[`${acc.Currency}-USD`] || (acc.Currency === 'USD' ? 1 : 0.75);
+    return total + ((acc.Currency === 'USD' ? acc.balance : acc.balance * rateToUSD) || 0);
   }, 0);
 
   return (
@@ -102,19 +128,31 @@ export default function Dashboard() {
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
-              {wallets.map((wallet, idx) => (
+              {isLoadingAccounts ? (
+                <div className="col-span-full py-4 text-center text-textSecondary text-sm">Loading accounts...</div>
+              ) : accounts.length === 0 ? (
+                <div className="col-span-full py-4 text-center text-textSecondary text-sm">No accounts found.</div>
+              ) : accounts.map((acc, idx) => (
                  <motion.div 
-                   key={wallet.currency}
+                   key={acc.accountId}
                    initial={{ opacity: 0, y: 10 }}
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: 0.2 + (idx * 0.1) }}
-                   className="bg-surface-hover/20 rounded-xl p-4 border border-border hover:bg-surface-hover/40 transition-all duration-300"
+                   className="bg-surface-hover/20 rounded-xl p-4 border border-border hover:bg-surface-hover/40 transition-all duration-300 relative overflow-hidden"
                  >
-                   <div className="flex items-center justify-between mb-1">
-                     <div className="text-textSecondary text-sm">{wallet.currency} Wallet</div>
-                     <span className="text-lg">{getCurrencyFlag(wallet.currency)}</span>
+                   <div className="flex items-center justify-between mb-1 relative z-10">
+                     <div className="text-textSecondary text-sm font-semibold">{acc.BusinessName || 'Account'}</div>
+                     <span className="text-xl drop-shadow-md">{getCurrencyFlag(acc.Currency)}</span>
                    </div>
-                   <div className="text-xl font-semibold">{wallet.symbol}{wallet.balance.toLocaleString()}</div>
+                   <div className="text-2xl font-bold tracking-tight text-textPrimary relative z-10 mt-1">
+                     {acc.Currency} {acc.balance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                   </div>
+                   <div className="text-xs text-textSecondary mt-3 font-mono opacity-70 relative z-10">
+                     ID: {acc.accountId}
+                   </div>
+                   
+                   {/* Decorative background pulse */}
+                   <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
                  </motion.div>
               ))}
             </div>

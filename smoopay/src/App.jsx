@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Transfer from './pages/Transfer';
 import Escrow from './pages/Escrow';
 import ManageCurrencies from './pages/ManageCurrencies';
+import TransactionHistory from './pages/TransactionHistory';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import { cn } from './lib/utils';
@@ -37,6 +38,7 @@ function AppContent() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/transfer" element={<Transfer />} />
               <Route path="/escrow" element={<Escrow />} />
+              <Route path="/transactions" element={<TransactionHistory />} />
               <Route path="/manage-currencies" element={<ManageCurrencies />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
