@@ -1,56 +1,207 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GlassCard } from '../components/ui/GlassCard';
 import { Button } from '../components/ui/Button';
-import { UploadCloud, File, Activity, ShieldCheck, Lock, Unlock, BadgeCheck } from 'lucide-react';
+import { UploadCloud, File, Activity, ShieldCheck, Lock, Unlock, BadgeCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import { useMockStore } from '../store/MockStore';
 
 export default function ManageCurrencies() {
+  const { user } = useMockStore();
   const [status, setStatus] = useState('idle'); // idle, scanning, success
   const [scanProgress, setScanProgress] = useState(0);
   const [codeStrings, setCodeStrings] = useState([]);
+  
+  // Each file entry: { file: File, isBalanceSheet: bool, isIncomeStatement: bool, isCashflow: bool }
+  const [fileEntries, setFileEntries] = useState([]);
+  const [apiOutput, setApiOutput] = useState(null);
 
   const mockCodeStrings = [
-    "ANALYZING_MRZ_DATA...",
-    "VERIFYING_HOLOGRAM_INTEGRITY...",
-    "CROSS_REFERENCING_INTERPOL_DB...",
-    "EXTRACTING_FACIAL_FEATURES...",
-    "RUNNING_LIVENESS_CHECK...",
-    "VALIDATING_ISSUANCE_DATE...",
-    "MATCHING_AML_BLACKLIST...",
-    "RISK_SCORE_COMPUTATION: LOW",
+    "UPLOADING_DOCUMENTS...",
+    "EXTRACTING_FINANCIAL_DATA...",
+    "ANALYZING_CASH_FLOW...",
+    "VERIFYING_BALANCE_SHEET...",
+    "CALCULATING_CREDIT_SCORE...",
+    "CONTACTING_CREDIT_BUREAU...",
+    "EVALUATING_RISK_PROFILE...",
+    "CREDIT_EVALUATION_COMPLETE: APPROVED",
     "CLEARANCE_GRANTED."
   ];
 
-  useEffect(() => {
-    if (status === 'scanning') {
-      let currentProgress = 0;
-      let stringIndex = 0;
-      
-      const interval = setInterval(() => {
-        currentProgress += Math.random() * 5 + 2;
-        if (currentProgress >= 100) {
-          currentProgress = 100;
-          clearInterval(interval);
-          setTimeout(() => setStatus('success'), 800);
-        }
-        setScanProgress(currentProgress);
-        
-        // Add code string
-        if (stringIndex < mockCodeStrings.length && currentProgress > (stringIndex * 11)) {
-          setCodeStrings(prev => [...prev, mockCodeStrings[stringIndex]]);
-          stringIndex++;
-        }
-      }, 150);
-
-      return () => clearInterval(interval);
-    }
-  }, [status]);
-
   const handleDrop = (e) => {
     e.preventDefault();
-    if (status === 'idle') setStatus('scanning');
+    if (status !== 'idle') return;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const newEntries = Array.from(e.dataTransfer.files).map(file => ({
+        file,
+        isBalanceSheet: false,
+        isIncomeStatement: false,
+        isCashflow: false
+      }));
+      setFileEntries(prev => [...prev, ...newEntries]);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newEntries = Array.from(e.target.files).map(file => ({
+        file,
+        isBalanceSheet: false,
+        isIncomeStatement: false,
+        isCashflow: false
+      }));
+      setFileEntries(prev => [...prev, ...newEntries]);
+      // Reset input so same file can be re-added
+      e.target.value = '';
+    }
+  };
+
+  const removeFile = (index) => {
+    setFileEntries(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateFileEntry = (index, field, value) => {
+    setFileEntries(prev => prev.map((entry, i) => 
+      i === index ? { ...entry, [field]: value } : entry
+    ));
+  };
+
+  const getBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const base64String = reader.result.split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+  });
+
+  const handleSubmit = async () => {
+    if (fileEntries.length === 0) return;
+    
+    setStatus('scanning');
+    setScanProgress(0);
+    setCodeStrings([`UPLOADING_${fileEntries.length}_DOCUMENT(S)...`]);
+    
+    let currentProgress = 0;
+    let logIndex = 1;
+
+    const interval = setInterval(() => {
+      currentProgress += Math.random() * 8 + 2;
+      if (currentProgress < 90) {
+        setScanProgress(currentProgress);
+        if (logIndex < mockCodeStrings.length && currentProgress > (logIndex * 10)) {
+          setCodeStrings(prev => [...prev, mockCodeStrings[logIndex]]);
+          logIndex++;
+        }
+      }
+    }, 250);
+
+    try {
+      const customerId = user?.customerId || 'DEMO-CUST';
+      const businessName = user?.profileData?.givenName || user?.name || user?.uen || 'DemoBusiness';
+      
+      // Build payload array from all file entries
+      const payload = await Promise.all(
+        fileEntries.map(async (entry) => {
+          const base64File = await getBase64(entry.file);
+          return {
+            FolderName: "IS444Group2",
+            SubfolderName: businessName,
+            FileName: entry.file.name,
+            File: base64File,
+            isBalanceSheet: entry.isBalanceSheet,
+            isIncomeStatement: entry.isIncomeStatement,
+            isCashflow: entry.isCashflow
+          };
+        })
+      );
+
+      console.log('=== DEBUG: CalcCreditScore ===');
+      console.log('CustomerId:', customerId);
+      console.log('BusinessName:', businessName);
+      console.log('Files:', fileEntries.map(e => e.file.name));
+      console.log('Payload entries:', payload.length);
+
+      const url = `https://smuedu-dev.outsystemsenterprise.com/CreditScoring/rest/CreditEvaluationAPI/CalcCreditScore?CustomerId=${encodeURIComponent(customerId)}&RuleVersion=0&ForceRefresh=true`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Contacts-Key': '79a7f4cc-3ddc-4f8c-b1f3-557c7ff73af7'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('Response Status:', response.status, response.statusText);
+
+      let data;
+      try {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data = text;
+        }
+      } catch (e) {
+        data = "Unable to read response body";
+      }
+
+      if (!response.ok) {
+        console.error('API Error Response:', data);
+        setApiOutput({ error: 'Upload failed', details: data });
+        clearInterval(interval);
+        setScanProgress(100);
+        setCodeStrings(prev => [...prev, "ERROR_DURING_EVALUATION"]);
+        setTimeout(() => setStatus('success'), 1000);
+        return;
+      }
+      
+      console.log('CalcCreditScore Process ID:', data);
+      setCodeStrings(prev => [...prev, `PROCESS_ID: ${data}`, "FETCHING_CREDIT_SCORE..."]);
+      
+      // Wait for the async process to complete, then fetch credit score
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      const getCreditScoreUrl = `https://smuedu-dev.outsystemsenterprise.com/CreditScoring/rest/CreditEvaluationAPI/GetCreditScore?CustomerID=${encodeURIComponent(customerId)}`;
+      
+      console.log('Fetching GetCreditScore:', getCreditScoreUrl);
+      
+      const scoreResponse = await fetch(getCreditScoreUrl, {
+        method: 'GET',
+        headers: {
+          'X-Contacts-Key': '79a7f4cc-3ddc-4f8c-b1f3-557c7ff73af7'
+        }
+      });
+      
+      let scoreData;
+      try {
+        scoreData = await scoreResponse.json();
+      } catch (e) {
+        const text = await scoreResponse.text();
+        scoreData = { raw: text };
+      }
+      
+      console.log('GetCreditScore Result:', scoreData);
+      setApiOutput(scoreData);
+      
+      clearInterval(interval);
+      setScanProgress(100);
+      setCodeStrings(prev => [...prev, "CREDIT_SCORE_RETRIEVED", "EVALUATION_COMPLETE"]);
+      setTimeout(() => setStatus('success'), 1000);
+    } catch (err) {
+      console.error(err);
+      setApiOutput({ 
+        error: "Network or Request Error", 
+        message: err.message || JSON.stringify(err) 
+      });
+      clearInterval(interval);
+      setScanProgress(100);
+      setCodeStrings(prev => [...prev, "NETWORK_ERROR"]);
+      setTimeout(() => setStatus('success'), 1000);
+    }
   };
 
   return (
@@ -58,7 +209,7 @@ export default function ManageCurrencies() {
       <div className="max-w-5xl mx-auto space-y-8 pb-12">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Currencies & Limits</h1>
-          <p className="text-textSecondary">Submit additional documentation to appeal for higher limits or unlock new regional wallets.</p>
+          <p className="text-textSecondary">Submit financial statements to evaluate credit and unlock higher limits or new wallets.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -71,16 +222,111 @@ export default function ManageCurrencies() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center p-8 text-center"
+                  className="flex flex-col items-center justify-center p-6 text-center w-full"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
                 >
-                  <div className="w-24 h-24 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center mb-6 text-textSecondary hover:border-primary/50 hover:text-primary transition-colors cursor-pointer group" onClick={() => setStatus('scanning')}>
-                     <UploadCloud className="w-10 h-10 group-hover:scale-110 transition-transform" />
+                  <input type="file" id="fileUpload" className="hidden" accept=".pdf,.csv" multiple onChange={handleFileChange} />
+                  
+                  <div 
+                    className={cn(
+                      "w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center mb-4 transition-colors cursor-pointer group shrink-0",
+                      fileEntries.length > 0 ? "bg-primary/10 border-primary text-primary shadow-[0_0_15px_rgba(0,184,217,0.2)]" : "bg-white/5 border-white/20 text-textSecondary hover:border-primary/50 hover:text-primary"
+                    )} 
+                    onClick={() => document.getElementById('fileUpload').click()}
+                  >
+                     {fileEntries.length > 0 ? <File className="w-8 h-8" /> : <UploadCloud className="w-8 h-8 group-hover:scale-110 transition-transform" />}
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Upload Passport or ID</h3>
-                  <p className="text-sm text-textSecondary max-w-xs mb-8">Drag and drop your secure documents here, or click to browse.</p>
-                  <Button variant="secondary" onClick={() => setStatus('scanning')}>Browse Files</Button>
+                  
+                  <h3 className="text-lg font-semibold text-textPrimary mb-1">
+                    {fileEntries.length > 0 ? `${fileEntries.length} file(s) selected` : "Upload Financials"}
+                  </h3>
+                  <p className="text-xs text-textSecondary max-w-xs mb-4">
+                    {fileEntries.length > 0 ? "Set document types for each file, then submit." : "Drag and drop your PDF/CSV files here, or click to browse. You can upload multiple files."}
+                  </p>
+
+                  {/* File list with per-file document type checkboxes */}
+                  {fileEntries.length > 0 && (
+                    <div className="w-full max-w-sm space-y-3 mb-4 max-h-[280px] overflow-y-auto pr-1">
+                      {fileEntries.map((entry, idx) => (
+                        <motion.div 
+                          key={idx}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-surface-hover/20 border border-border rounded-xl p-3 text-left"
+                        >
+                          {/* File name + remove button */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <File className="w-4 h-4 text-primary shrink-0" />
+                            <span className="text-xs font-medium text-textPrimary truncate flex-1">{entry.file.name}</span>
+                            <button 
+                              onClick={() => removeFile(idx)} 
+                              className="text-textSecondary hover:text-red-400 transition-colors p-0.5 shrink-0"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          
+                          {/* Document type checkboxes */}
+                          <div className="flex flex-wrap gap-2">
+                            <label className={cn(
+                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors text-[11px] font-mono",
+                              entry.isBalanceSheet ? "bg-primary/10 border-primary/50 text-primary" : "bg-black/10 border-border text-textSecondary hover:bg-black/20"
+                            )}>
+                              <input 
+                                type="checkbox" 
+                                checked={entry.isBalanceSheet} 
+                                onChange={(e) => updateFileEntry(idx, 'isBalanceSheet', e.target.checked)}
+                                className="w-3.5 h-3.5 rounded text-primary bg-background border-border focus:ring-primary" 
+                              />
+                              BS: <span className={entry.isBalanceSheet ? "text-emerald-500" : ""}>{entry.isBalanceSheet ? 'true' : 'false'}</span>
+                            </label>
+                            <label className={cn(
+                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors text-[11px] font-mono",
+                              entry.isIncomeStatement ? "bg-primary/10 border-primary/50 text-primary" : "bg-black/10 border-border text-textSecondary hover:bg-black/20"
+                            )}>
+                              <input 
+                                type="checkbox" 
+                                checked={entry.isIncomeStatement} 
+                                onChange={(e) => updateFileEntry(idx, 'isIncomeStatement', e.target.checked)}
+                                className="w-3.5 h-3.5 rounded text-primary bg-background border-border focus:ring-primary" 
+                              />
+                              IS: <span className={entry.isIncomeStatement ? "text-emerald-500" : ""}>{entry.isIncomeStatement ? 'true' : 'false'}</span>
+                            </label>
+                            <label className={cn(
+                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors text-[11px] font-mono",
+                              entry.isCashflow ? "bg-primary/10 border-primary/50 text-primary" : "bg-black/10 border-border text-textSecondary hover:bg-black/20"
+                            )}>
+                              <input 
+                                type="checkbox" 
+                                checked={entry.isCashflow} 
+                                onChange={(e) => updateFileEntry(idx, 'isCashflow', e.target.checked)}
+                                className="w-3.5 h-3.5 rounded text-primary bg-background border-border focus:ring-primary" 
+                              />
+                              CF: <span className={entry.isCashflow ? "text-emerald-500" : ""}>{entry.isCashflow ? 'true' : 'false'}</span>
+                            </label>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    {fileEntries.length > 0 && (
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => document.getElementById('fileUpload').click()}
+                      >
+                        Add More
+                      </Button>
+                    )}
+                    <Button 
+                      variant={fileEntries.length > 0 ? "primary" : "secondary"} 
+                      onClick={fileEntries.length > 0 ? handleSubmit : () => document.getElementById('fileUpload').click()}
+                    >
+                      {fileEntries.length > 0 ? "Evaluate & Upgrade Limits" : "Browse Files"}
+                    </Button>
+                  </div>
                 </motion.div>
               )}
 
@@ -94,11 +340,11 @@ export default function ManageCurrencies() {
                 >
                    <div className="flex items-center gap-3 mb-6">
                      <Activity className="w-6 h-6 text-primary animate-pulse" />
-                     <h3 className="font-semibold text-white">AI Engine Processing</h3>
+                     <h3 className="font-semibold text-textPrimary">AI Credit Engine Processing</h3>
                    </div>
 
                    {/* Scanning Visualizer */}
-                   <div className="relative aspect-[3/2] w-full bg-black/40 rounded-xl border border-white/10 overflow-hidden mb-6 flex items-center justify-center isolate">
+                   <div className="relative aspect-[3/2] w-full bg-black/40 rounded-xl border border-white/10 overflow-hidden mb-6 flex items-center justify-center isolate shrink-0">
                      <File className="w-20 h-20 text-white/10" />
                      
                      {/* Laser Scanner */}
@@ -112,7 +358,7 @@ export default function ManageCurrencies() {
                    </div>
 
                    {/* Output terminal */}
-                   <div className="bg-black/60 rounded-lg p-4 font-mono text-[10px] sm:text-xs text-primary h-32 overflow-hidden flex flex-col justify-end border border-white/5 shadow-inner">
+                   <div className="bg-black/60 rounded-lg p-4 font-mono text-[10px] sm:text-xs text-primary h-32 overflow-y-auto flex flex-col justify-end border border-white/5 shadow-inner">
                      {codeStrings.map((str, i) => (
                        <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
                          {'>'} {str}
@@ -126,9 +372,9 @@ export default function ManageCurrencies() {
                    </div>
 
                    {/* Progress Bar */}
-                   <div className="mt-6">
+                   <div className="mt-6 shrink-0">
                      <div className="flex justify-between text-xs font-medium text-textSecondary mb-2">
-                       <span>Verification Progress</span>
+                       <span>Evaluation Progress</span>
                        <span className="text-primary tracking-wider">{Math.round(scanProgress)}%</span>
                      </div>
                      <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
@@ -143,16 +389,95 @@ export default function ManageCurrencies() {
                   key="success"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center text-center p-8 h-full"
+                  className="flex flex-col items-center justify-center text-center p-6 h-full w-full overflow-y-auto"
                 >
-                  <div className="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(52,211,153,0.2)]">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 shadow-[0_0_40px_rgba(52,211,153,0.2)]">
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.2 }}>
-                      <ShieldCheck className="w-12 h-12" />
+                      <ShieldCheck className="w-7 h-7" />
                     </motion.div>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Documentation Verified</h3>
-                  <p className="text-textSecondary mb-8 max-w-[280px]">Your request for additional currency access is being processed. New limits will be reflected shortly.</p>
-                  <Button variant="secondary" onClick={() => { setStatus('idle'); setScanProgress(0); setCodeStrings([]); }}>Submit Another Appeal</Button>
+                  <h3 className="text-lg font-bold text-textPrimary mb-1">Credit Evaluation Complete</h3>
+                  
+                  {/* Credit Score Display */}
+                  {apiOutput && typeof apiOutput === 'object' && apiOutput.CreditScore !== undefined ? (
+                    <div className="w-full space-y-4 mt-4">
+                      {/* Score & Grade */}
+                      <div className="flex items-center justify-center gap-6">
+                        <div className="text-center">
+                          <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Credit Score</p>
+                          <motion.p 
+                            initial={{ opacity: 0, y: 10 }} 
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-4xl font-black text-primary"
+                          >
+                            {Math.round(apiOutput.CreditScore)}
+                          </motion.p>
+                        </div>
+                        <div className="w-px h-12 bg-border"></div>
+                        <div className="text-center">
+                          <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Risk Grade</p>
+                          <motion.p 
+                            initial={{ opacity: 0, y: 10 }} 
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className={cn(
+                              "text-3xl font-black",
+                              apiOutput.CreditScore >= 700 ? "text-emerald-400" :
+                              apiOutput.CreditScore >= 500 ? "text-amber-400" : "text-red-400"
+                            )}
+                          >
+                            {apiOutput.RiskGrade}
+                          </motion.p>
+                        </div>
+                      </div>
+
+                      {/* Details */}
+                      <div className="bg-black/30 rounded-xl p-3 border border-white/10 text-left space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-textSecondary">Customer ID</span>
+                          <span className="text-textPrimary font-mono">{apiOutput.CustomerID}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-textSecondary">Evaluated On</span>
+                          <span className="text-textPrimary font-mono">{apiOutput.CreatedDate}</span>
+                        </div>
+                        {apiOutput.CSDocumentList && apiOutput.CSDocumentList.length > 0 && (
+                          <div className="pt-2 border-t border-white/5">
+                            <p className="text-[10px] text-textSecondary uppercase tracking-wider mb-1">Documents Processed ({apiOutput.CSDocumentList.length})</p>
+                            {apiOutput.CSDocumentList.map((doc, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs text-textPrimary py-1">
+                                <File className="w-3 h-3 text-primary shrink-0" />
+                                <span className="truncate font-mono text-[10px]">{doc.FileName}</span>
+                                <span className="ml-auto text-[10px] text-emerald-400 shrink-0">
+                                  {doc.isBalanceSheet ? 'BS' : doc.isIncomeStatement ? 'IS' : doc.isCashflow ? 'CF' : '—'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Fallback: raw output */
+                    <div className="w-full bg-black/50 rounded-xl p-4 border border-white/10 mt-4 text-left max-h-40 overflow-y-auto">
+                      <p className="text-xs text-textSecondary uppercase tracking-wider font-semibold mb-2">API Output</p>
+                      <pre className="text-emerald-400 font-mono text-[10px] sm:text-xs whitespace-pre-wrap">
+                        {apiOutput === null 
+                          ? "Waiting..."
+                          : typeof apiOutput === 'object'
+                            ? JSON.stringify(apiOutput, null, 2)
+                            : String(apiOutput)}
+                      </pre>
+                    </div>
+                  )}
+
+                  <Button className="mt-4" variant="secondary" onClick={() => { 
+                    setStatus('idle'); 
+                    setScanProgress(0); 
+                    setCodeStrings([]); 
+                    setFileEntries([]);
+                    setApiOutput(null);
+                  }}>Compute Credit Score Again</Button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -161,7 +486,7 @@ export default function ManageCurrencies() {
           {/* Results UI / Permissions Wallet */}
           <div className="space-y-6 flex flex-col h-full">
              <GlassCard className="flex-1 h-full">
-               <h3 className="text-lg font-semibold flex items-center gap-2 mb-6 text-white border-b border-white/10 pb-4">
+               <h3 className="text-lg font-semibold flex items-center gap-2 mb-6 text-textPrimary border-b border-border pb-4">
                   <BadgeCheck className="w-5 h-5 text-primary" /> Wallet Permissions
                </h3>
                
@@ -187,7 +512,7 @@ export default function ManageCurrencies() {
                          {wallet.locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                        </div>
                        <div>
-                         <div className="font-medium text-sm text-white">{wallet.name}</div>
+                         <div className="font-medium text-sm text-textPrimary">{wallet.name}</div>
                          <div className="text-xs text-textSecondary mt-0.5 font-mono tracking-tight">Limit: {wallet.limit}</div>
                        </div>
                      </div>
