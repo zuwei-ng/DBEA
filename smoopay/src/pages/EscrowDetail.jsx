@@ -182,6 +182,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
   };
 
   const handleOpenEdit = (milestone) => {
+    if (escrow.status !== 'Draft') return;
     setEditingMilestone({
       Id: milestone.id,
       Description: milestone.title,
@@ -241,6 +242,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
   };
 
   const handleOpenEditAgreement = () => {
+    if (escrow.status !== 'Draft') return;
     setEditingAgreement({
       CreatedBy: customerId,
       Id: escrow.id,
@@ -492,7 +494,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
           <div className="sticky top-8 flex flex-col space-y-6">
             <div
-              className="transition-all duration-300 group/card relative cursor-pointer"
+              className={cn("transition-all duration-300 group/card relative", escrow.status === 'Draft' ? "cursor-pointer" : "cursor-default")}
               onClick={handleOpenEditAgreement}
             >
               {/* Vertical Divider Line - Attached to Card with padding */}
@@ -500,7 +502,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
               <div className={cn(
                 "p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden bg-white shadow-sm flex flex-col",
-                escrow.status !== 'Active' ? "hover:border-primary/40 hover:shadow-xl border-border/60" : "border-border/40"
+                escrow.status === 'Draft' ? "hover:border-primary/40 hover:shadow-xl border-border/60" : "border-border/40"
               )}>
                 <div className="absolute -right-20 -top-20 w-40 h-40 bg-primary/5 blur-[60px] rounded-full group-hover/card:bg-primary/10 transition-colors pointer-events-none" />
                 <div className="flex items-start gap-4 mb-6 relative z-10">
@@ -516,7 +518,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                   <div className="flex flex-col pt-1">
                     <h3 className={cn(
                       "text-lg font-semibold transition-colors leading-tight",
-                      escrow.status !== 'Active' && "group-hover/card:text-primary"
+                      escrow.status === 'Draft' && "group-hover/card:text-primary"
                     )}>
                       Agreement Details
                     </h3>
@@ -618,6 +620,23 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       )}
                     </div>
                   )}
+
+                  {escrow.status === 'Completed' && (
+                    <div className="space-y-3 mt-4">
+                      <Button
+                        variant="ghost"
+                        className="w-full text-red-500 hover:text-red-500 hover:bg-red-500/10 border border-red-500/20 shadow-none font-bold py-2 rounded-lg group"
+                        disabled={isDeleting}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete();
+                        }}
+                      >
+                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />}
+                        {isDeleting ? 'Deleting...' : 'Delete Agreement'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -648,19 +667,19 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
                         {/* Milestone Detail Card */}
                         <div
-                          className="transition-all duration-300 h-full group/card cursor-pointer"
-                          onClick={() => handleOpenEdit(milestone)}
+                          className={cn("transition-all duration-300 h-full group/card", escrow.status === 'Draft' ? "cursor-pointer" : "cursor-default")}
+                          onClick={() => escrow.status === 'Draft' && handleOpenEdit(milestone)}
                         >
                           <div className={cn(
                             "p-6 h-[240px] rounded-2xl border transition-all duration-500 relative overflow-hidden bg-white shadow-sm flex flex-col",
-                            escrow.status !== 'Active' ? "hover:border-primary/40 hover:shadow-xl border-border/60" : "border-border/40"
+                            escrow.status === 'Draft' ? "hover:border-primary/40 hover:shadow-xl border-border/60" : "border-border/40"
                           )}>
                             <div className="absolute -right-20 -top-20 w-40 h-40 bg-primary/5 blur-[60px] rounded-full group-hover/card:bg-primary/10 transition-colors pointer-events-none" />
                             <div className="flex justify-between items-start mb-6 relative z-10">
                               <div className="space-y-1.5 min-w-0">
                                 <h4 className={cn(
                                   "text-lg font-semibold transition-colors leading-tight",
-                                  escrow.status !== 'Active' && "group-hover/card:text-primary"
+                                  escrow.status === 'Draft' && "group-hover/card:text-primary"
                                 )}>
                                   {milestone.title}
                                 </h4>
