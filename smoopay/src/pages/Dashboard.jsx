@@ -388,8 +388,9 @@ export default function Dashboard() {
     return null;
   };
 
-  const hasFxPair = (fromCurrency, toCurrency) =>
-    Boolean(mockFxRates[`${fromCurrency}-${toCurrency}`] || mockFxRates[`${toCurrency}-${fromCurrency}`]);
+  const hasFxPair = (fromCurrency, toCurrency) => {
+    return convertAmount(1, fromCurrency, toCurrency) !== null;
+  };
 
   const exchangeAmountValue = Number.parseFloat(exchangeAmountInput);
   const currentRate = getFxRate(exchangeFrom, exchangeTo);
