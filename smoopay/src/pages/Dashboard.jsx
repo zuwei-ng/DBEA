@@ -627,7 +627,7 @@ export default function Dashboard() {
           <GlassCard className="lg:col-span-2 flex flex-col justify-between" hoverEffect>
             <div className="flex justify-between items-start">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-hover/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-textSecondary">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-black/5 dark:bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-textSecondary">
                   <Landmark className="w-3.5 h-3.5" />
                   <span>Reporting Currency</span>
                   <select
@@ -673,7 +673,7 @@ export default function Dashboard() {
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: 0.2 + (idx * 0.1) }}
                    onClick={() => openCashAction(acc)}
-                   className="bg-surface-hover/10 rounded-2xl p-6 border border-white/5 dark:border-white/10 hover:bg-surface-hover/20 hover:border-primary/30 transition-all duration-500 relative overflow-hidden group flex flex-col h-full cursor-pointer hover:shadow-[0_20px_40px_rgba(0,184,217,0.1)] active:scale-[0.98]"
+                   className="bg-surface-hover/10 rounded-2xl p-6 border border-white/5 dark:border-white/10 hover:bg-black/5 dark:bg-white/5 hover:border-primary/30 transition-all duration-500 relative overflow-hidden group flex flex-col h-full cursor-pointer hover:shadow-[0_20px_40px_rgba(0,184,217,0.1)] active:scale-[0.98]"
                  >
                    {/* Top: Header Info */}
                    <div className="flex items-center justify-between mb-3 relative z-10">
@@ -714,7 +714,7 @@ export default function Dashboard() {
             </h3>
             
             <div className="flex-1 space-y-4">
-              <div className="bg-surface-hover/20 rounded-xl p-3 border border-border">
+              <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 border border-border">
                 <div className="flex justify-between text-sm text-textSecondary mb-2">
                   <span>From</span>
                   <span>Balance: {(exchangeWallets.find(w=>w.currency===exchangeFrom)?.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -751,7 +751,7 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="bg-surface-hover/20 rounded-xl p-3 border border-border">
+              <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 border border-border">
                 <div className="flex justify-between text-sm text-textSecondary mb-2">
                   <span>To (Rate: {currentRate})</span>
                 </div>
@@ -821,7 +821,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-4 w-full sm:w-auto mb-3 sm:mb-0">
                     <div className={cn(
                       "p-3 rounded-xl transition-all duration-300", 
-                      tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:bg-emerald-500/20' : 'bg-surface-hover/20 text-textSecondary group-hover:bg-surface-hover/40 group-hover:text-textPrimary'
+                      tx.amount > 0 ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:bg-emerald-500/20' : 'bg-black/5 dark:bg-white/5 text-textSecondary group-hover:bg-surface-hover/40 group-hover:text-textPrimary'
                     )}>
                       {tx.amount > 0 ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                     </div>

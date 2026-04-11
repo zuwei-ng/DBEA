@@ -197,7 +197,7 @@ export default function Transfer() {
                       <div>
                         <label className="text-sm text-textSecondary mb-2 block font-medium uppercase tracking-wider">Business UEN</label>
                         <div className="flex gap-3">
-                          <div className="flex flex-1 items-center bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus-within:border-primary transition-colors">
+                          <div className="flex flex-1 items-center bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus-within:border-primary transition-colors">
                             <input
                               type="text"
                               value={recipientUEN}
@@ -241,7 +241,7 @@ export default function Transfer() {
                                   "flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer group",
                                   selectedAccountTo === acc.accountId
                                     ? "bg-primary/10 border-primary shadow-glow"
-                                    : "bg-surface-hover/20 border-border hover:border-primary/40"
+                                    : "bg-black/5 dark:bg-white/5 border-border hover:border-primary/40"
                                 )}
                               >
                                 <div className="flex items-center gap-4">
@@ -291,7 +291,7 @@ export default function Transfer() {
                   </h2>
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-surface-hover/20 p-5 rounded-2xl border border-border">
+                      <div className="bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-border">
                         <label className="text-sm text-textSecondary mb-2 block font-medium uppercase tracking-wider">Source Wallet</label>
                         <select
                           value={sourceAccountId}
@@ -306,7 +306,7 @@ export default function Transfer() {
                         </select>
                       </div>
 
-                      <div className="bg-surface-hover/20 p-5 rounded-2xl border border-border focus-within:border-primary/50 transition-colors">
+                      <div className="bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-border focus-within:border-primary/50 transition-colors">
                         <label className="text-sm text-textSecondary mb-2 block font-medium uppercase tracking-wider">Transfer Amount</label>
                         <div className="relative">
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-primary">$</span>
@@ -328,7 +328,7 @@ export default function Transfer() {
                           type="text"
                           value={reference}
                           onChange={e => setReference(e.target.value)}
-                          className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-textPrimary"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-textPrimary"
                         />
                       </div>
                       <div>
@@ -337,7 +337,7 @@ export default function Transfer() {
                           rows={3}
                           value={narrative}
                           onChange={e => setNarrative(e.target.value)}
-                          className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-textPrimary placeholder-textSecondary/30"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-textPrimary placeholder-textSecondary/30"
                           placeholder="What is this transfer for?"
                         />
                       </div>
@@ -373,7 +373,7 @@ export default function Transfer() {
                     <p className="text-textSecondary max-w-sm">
                       Your transfer of <span className="text-textPrimary font-bold">{transferAmount} {displaySourceCurrency}</span> has been successfully dispatched.
                     </p>
-                    <div className="bg-surface-hover/20 px-4 py-2 rounded-lg inline-block text-xs font-mono text-textSecondary border border-border">
+                    <div className="bg-black/5 dark:bg-white/5 px-4 py-2 rounded-lg inline-block text-xs font-mono text-textSecondary border border-border">
                       REF: {reference}
                     </div>
                   </div>

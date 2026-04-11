@@ -178,10 +178,10 @@ export default function TransactionHistory() {
                   <select 
                     value={selectedAccountId}
                     onChange={handleAccountChange}
-                    className="w-full bg-surface-hover/20 border border-border rounded-xl pl-3 pr-8 py-3 text-sm focus:border-primary outline-none transition-all text-textPrimary appearance-none"
+                    className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl pl-3 pr-8 py-3 text-sm focus:border-primary outline-none transition-all text-textPrimary appearance-none"
                   >
                     {accounts.map(acc => (
-                      <option key={acc.accountId} value={acc.accountId} className="bg-surface text-textPrimary">
+                      <option key={acc.accountId} value={acc.accountId} className="bg-background text-textPrimary">
                         {acc.BusinessName} ({acc.Currency}) - {acc.accountId.slice(-4)}
                       </option>
                     ))}
@@ -204,7 +204,7 @@ export default function TransactionHistory() {
                   type="date"
                   value={startDate}
                   onChange={e => { setStartDate(e.target.value); setPageNo(1); }}
-                  className="w-full bg-surface-hover/20 border border-border rounded-xl px-3 py-3 text-sm focus:border-primary outline-none transition-all text-textPrimary"
+                  className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-3 py-3 text-sm focus:border-primary outline-none transition-all text-textPrimary"
                 />
               </div>
               <div className="space-y-2">
@@ -213,7 +213,7 @@ export default function TransactionHistory() {
                   type="date"
                   value={endDate}
                   onChange={e => { setEndDate(e.target.value); setPageNo(1); }}
-                  className="w-full bg-surface-hover/20 border border-border rounded-xl px-3 py-3 text-sm focus:border-primary outline-none transition-all text-textPrimary"
+                  className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-3 py-3 text-sm focus:border-primary outline-none transition-all text-textPrimary"
                 />
               </div>
 
@@ -233,7 +233,7 @@ export default function TransactionHistory() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
-                    <tr className="bg-surface-hover/20 border-b border-border text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                    <tr className="bg-black/5 dark:bg-white/5 border-b border-border text-xs font-semibold text-textSecondary uppercase tracking-wider">
                       <th className="p-4">Date</th>
                       <th className="p-4">Description</th>
                       <th className="p-4">Reference</th>
@@ -263,7 +263,7 @@ export default function TransactionHistory() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.05 }}
-                            className="border-b border-border/50 hover:bg-surface-hover/30 transition-colors"
+                            className="border-b border-border/50 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                           >
                             <td className="p-4 text-sm text-textSecondary">
                               {new Date(displayDate).toLocaleDateString()}
@@ -300,16 +300,16 @@ export default function TransactionHistory() {
                       onChange={e => { setPageSize(Number(e.target.value)); setPageNo(1); }}
                       className="ml-2 bg-transparent border-none text-primary font-semibold outline-none cursor-pointer"
                     >
-                      <option value="5" className="bg-surface">5</option>
-                      <option value="10" className="bg-surface">10</option>
-                      <option value="20" className="bg-surface">20</option>
-                      <option value="50" className="bg-surface">50</option>
+                      <option value="5" className="bg-background">5</option>
+                      <option value="10" className="bg-background">10</option>
+                      <option value="20" className="bg-background">20</option>
+                      <option value="50" className="bg-background">50</option>
                     </select>
                   </p>
                   
                   <div className="flex items-center gap-2">
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       size="sm"
                       onClick={() => setPageNo(p => Math.max(1, p - 1))}
                       disabled={pageNo === 1 || isLoadingTransactions}
@@ -317,7 +317,7 @@ export default function TransactionHistory() {
                       Prev
                     </Button>
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       size="sm"
                       onClick={() => setPageNo(p => p + 1)}
                       disabled={transactions.length < pageSize || isLoadingTransactions}

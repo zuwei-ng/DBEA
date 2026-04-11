@@ -91,7 +91,7 @@ export default function Login() {
                     type="text" 
                     value={uen} 
                     onChange={e => setUen(e.target.value)}
-                    className="w-full bg-surface-hover/20 border border-border rounded-xl pl-10 pr-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" 
+                    className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl pl-10 pr-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" 
                     placeholder="e.g. TESTUEN111" 
                   />
                 </div>
@@ -105,7 +105,7 @@ export default function Login() {
                     type="password" 
                     value={password} 
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full bg-surface-hover/20 border border-border rounded-xl pl-10 pr-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" 
+                    className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl pl-10 pr-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" 
                     placeholder="••••••••" 
                   />
                 </div>
@@ -126,7 +126,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={handleSignUp}
-                className="group relative flex items-center justify-center gap-2 p-3 rounded-xl bg-surface-hover/20 border border-border hover:bg-surface-hover/40 hover:border-purple-500/50 transition-all duration-300"
+                className="group relative flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-border hover:bg-surface-hover/40 hover:border-purple-500/50 transition-all duration-300"
               >
                 <UserPlus className="w-4 h-4 text-purple-400" />
                 <span className="font-semibold text-textPrimary text-sm">Create New Account</span>
