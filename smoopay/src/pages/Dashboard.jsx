@@ -326,21 +326,12 @@ export default function Dashboard() {
   const addableWalletCurrencies = (Array.isArray(user?.availableCurrencies) ? user.availableCurrencies : [])
     .filter((currency) => !liveAccountCurrencies.includes(currency));
 
-  const quickExchangeCurrencies = (
-    exchangeAccounts.length > 0
+  const quickExchangeCurrencies = Array.from(new Set(
+    (exchangeAccounts.length > 0
       ? exchangeAccounts.map((account) => account.Currency)
       : wallets.map((wallet) => wallet.currency)
-  ).filter((currency) => {
-    const otherCurrencies = (
-      exchangeAccounts.length > 0
-        ? exchangeAccounts.map((account) => account.Currency)
-        : wallets.map((wallet) => wallet.currency)
-    ).filter((otherCurrency) => otherCurrency !== currency);
-
-    return otherCurrencies.some(
-      (otherCurrency) => mockFxRates[`${currency}-${otherCurrency}`] || mockFxRates[`${otherCurrency}-${currency}`]
-    );
-  });
+    ).filter(Boolean)
+  ));
 
   const exchangeWallets = quickExchangeCurrencies.map((currency) => {
     const walletMatch = wallets.find((wallet) => wallet.currency === currency);
@@ -385,11 +376,12 @@ export default function Dashboard() {
       }
     }
 
-    return null;
+    // Fallback if no rate exists
+    return amount;
   };
 
   const hasFxPair = (fromCurrency, toCurrency) => {
-    return convertAmount(1, fromCurrency, toCurrency) !== null;
+    return true; // We now provide a fallback conversion of 1:1 if no pair exists
   };
 
   const exchangeAmountValue = Number.parseFloat(exchangeAmountInput);
