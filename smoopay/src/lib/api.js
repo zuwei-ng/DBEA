@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
   // tBank Cash Operations — CustomerID is substituted at call time
   DEPOSIT_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/DepositCash`,
   WITHDRAW_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/WithdrawCash`,
+  CREATE_DEPOSIT_ACCOUNT: `${TBANK_PROXY}/Gateway/rest/Account/CreateDepositAccount`,
 };
 
 /**

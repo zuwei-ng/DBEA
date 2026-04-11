@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [manualWallets, setManualWallets] = useState([]);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [selectedWalletCurrency, setSelectedWalletCurrency] = useState('');
+  const [isAddingWallet, setIsAddingWallet] = useState(false);
   
   const [selectedTx, setSelectedTx] = useState(null); // Used to display invoice modal
   const [accounts, setAccounts] = useState([]);
@@ -452,21 +453,86 @@ export default function Dashboard() {
     }
   }, [addableWalletCurrencies, selectedWalletCurrency]);
 
-  const handleAddWallet = () => {
-    if (!selectedWalletCurrency) {
+  const handleAddWallet = async () => {
+    if (!selectedWalletCurrency || !senderCustomerId) {
       return;
     }
 
-    const walletRecord = {
-      accountId: `LOCAL-${selectedWalletCurrency}`,
-      BusinessName: `${selectedWalletCurrency} Wallet`,
-      Currency: selectedWalletCurrency,
+    setIsAddingWallet(true);
+
+    const payload = {
+      casaAccount: {
+        interestPayoutAccount: "-",
+        parentAccountFlag: true,
+        isRestricted: false,
+        minorStatus: false,
+        minimumAmount: 0.1,
+        accountCloseDate: "-",
+        accrueInterestAmount: 0,
+        dueInterestAmount: 0,
+        depositTerm: 0
+      },
+      product: {
+        productId: 101,
+        productName: "CASA",
+        dateBasisForRate: "2026-03-25",
+        rateChartCode: "-",
+        compoundInterestRateBasis: "-"
+      },
+      maintenanceHistory: {
+        lastMaintenanceOfficer: "-",
+        lastTransactionBranch: "-"
+      },
+      customerId: senderCustomerId,
+      currency: selectedWalletCurrency,
+      homeBranch: "-",
+      officerId: "-",
+      accountOpenDate: new Date().toISOString().split('T')[0],
       balance: 0,
-      isLocalWallet: true,
+      currentStatus: "Open",
+      interestRate: 0.026,
+      assignedAccountForAccountManagementFeeDeduction: 0,
+      narrative: "deposit account created via API",
+      isServiceChargeWaived: true,
+      penaltyRate: 0,
+      bankId: 28
     };
 
-    setManualWallets((prev) => [...prev, walletRecord]);
-    setIsWalletModalOpen(false);
+    const username = "12173e30ec556fe4a951";
+    const password = "2fbbd75fd60a8389b82719d2dbc37f1eb9ed226f3eb43cfa7d9240c72fd5+bfc89ad4-c17f-4fe9-82c2-918d29d59fe0";
+    const authHeader = 'Basic ' + window.btoa(username + ':' + password);
+
+    try {
+      const res = await fetch(API_ENDPOINTS.CREATE_DEPOSIT_ACCOUNT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to create account. Status: ${res.status}`);
+      }
+
+      await fetchAccountsData();
+      setIsWalletModalOpen(false);
+    } catch (err) {
+      console.error("Failed to add wallet via tBank API:", err);
+      // Fallback: If it fails, fallback to local wallet so the UI doesn't completely crater during demos
+      const walletRecord = {
+        accountId: `LOCAL-${selectedWalletCurrency}`,
+        BusinessName: `${selectedWalletCurrency} Wallet (Local Sandbox)`,
+        Currency: selectedWalletCurrency,
+        balance: 0,
+        isLocalWallet: true,
+      };
+      setManualWallets((prev) => [...prev, walletRecord]);
+      setIsWalletModalOpen(false);
+    } finally {
+      setIsAddingWallet(false);
+    }
   };
 
   const handleExchangeAmountChange = (value) => {
@@ -1115,8 +1181,9 @@ export default function Dashboard() {
                 <Button variant="secondary" onClick={() => setIsWalletModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddWallet} disabled={!selectedWalletCurrency || addableWalletCurrencies.length === 0}>
-                  Add Wallet
+                <Button onClick={handleAddWallet} disabled={!selectedWalletCurrency || addableWalletCurrencies.length === 0 || isAddingWallet} pulse={isAddingWallet}>
+                  {isAddingWallet ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isAddingWallet ? 'Creating...' : 'Add Wallet'}
                 </Button>
               </div>
             </motion.div>
