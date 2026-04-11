@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft, Send, Calendar, DollarSign, User, FileText, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { API_ENDPOINTS } from '../lib/api';
+import { useMockStore } from '../store/MockStore';
 
 export default function CreateAgreement({ onBack, onSuccess }) {
+  const { user } = useMockStore();
+  const customerId = user?.customerId;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    CreatedBy: "0000002892", // Hardcoded per user example
+    CreatedBy: customerId,
     Title: "",
     Description: "",
     ContractorAccountId: "",
@@ -20,6 +23,32 @@ export default function CreateAgreement({ onBack, onSuccess }) {
     EffectiveDate: new Date().toISOString().split('T')[0],
     ExpiryDate: ""
   });
+
+  const [availableAccounts, setAvailableAccounts] = useState([]);
+  const [availableCurrencies, setAvailableCurrencies] = useState([]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!user?.uen && !user?.customerId) return;
+      const identifier = user?.uen || user?.customerId;
+      try {
+        const url = `https://personal-urfnoedc.outsystemscloud.com/CreditTransfer/rest/CreditTransfer/GetAccountsByUENorCustId?UEN=${encodeURIComponent(identifier)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch accounts');
+        const data = await res.json();
+        setAvailableAccounts(data || []);
+        
+        const currencies = Array.from(new Set((data || []).map(a => a.Currency)));
+        setAvailableCurrencies(currencies);
+        if (currencies.length > 0) {
+          setFormData(prev => ({ ...prev, Currency: currencies[0] }));
+        }
+      } catch (err) {
+        console.error("CreateAgreement account fetch error:", err);
+      }
+    };
+    fetchAccounts();
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -179,10 +208,9 @@ export default function CreateAgreement({ onBack, onSuccess }) {
                 value={formData.Currency}
                 onChange={e => setFormData({...formData, Currency: e.target.value})}
               >
-                <option value="USD">USD - US Dollar</option>
-                <option value="SGD">SGD - Singapore Dollar</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="GBP">GBP - British Pound</option>
+                {availableCurrencies.map(curr => (
+                  <option key={curr} value={curr}>{curr}</option>
+                ))}
               </select>
             </div>
           </div>

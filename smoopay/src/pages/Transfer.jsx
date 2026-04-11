@@ -40,7 +40,7 @@ export default function Transfer() {
   const [completedTxDetails, setCompletedTxDetails] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
 
-  const senderCustomerId = user?.customerId || "0000002892";
+  const senderCustomerId = user?.customerId;
 
   // Load UEN from session and fetch sender accounts on mount
   useEffect(() => {

@@ -13,7 +13,8 @@ import confetti from 'canvas-confetti';
 import { API_ENDPOINTS } from '../lib/api';
 
 export default function EscrowDetail({ escrowId, onBack }) {
-  const { updateMilestone, fetchAgreements } = useMockStore();
+  const { updateMilestone, fetchAgreements, user } = useMockStore();
+  const customerId = user?.customerId;
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [escrow, setEscrow] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +65,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
         amount: data.Agreement?.TransactionValue || data.TransactionValue || 0,
         valuePaid: data.Agreement?.ValuePaid || data.ValuePaid || 0,
         status: data.Agreement?.Status || data.Status || 'Active',
-        createdBy: "0000002892",
+        createdBy: customerId,
         effectiveDate: (data.Agreement?.EffectiveDate || data.EffectiveDate || '').split('T')[0],
         expiryDate: (data.Agreement?.ExpiryDate || data.ExpiryDate || '').split('T')[0],
         createdAt: data.Agreement?.CreatedAt || data.CreatedAt || '',
@@ -240,9 +241,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
   };
 
   const handleOpenEditAgreement = () => {
-    if (escrow.status === 'Active') return;
     setEditingAgreement({
-      CreatedBy: "0000002892",
+      CreatedBy: customerId,
       Id: escrow.id,
       Title: escrow.title,
       Description: escrow.description,
@@ -268,7 +268,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editingAgreement,
-          CreatedBy: "0000002892",
+          CreatedBy: customerId,
           TransactionValue: parseFloat(editingAgreement.TransactionValue),
           ValuePaid: editingAgreement.ValuePaid
         }),
@@ -291,6 +291,30 @@ export default function EscrowDetail({ escrowId, onBack }) {
     if (agreementTotal !== escrow.amount) return;
     setIsActivating(true);
     try {
+      const identifier = user?.uen || user?.customerId;
+      let fundingAccountId = null;
+      try {
+        const accRes = await fetch(`https://personal-urfnoedc.outsystemscloud.com/CreditTransfer/rest/CreditTransfer/GetAccountsByUENorCustId?UEN=${encodeURIComponent(identifier)}`);
+        if (accRes.ok) {
+          const accounts = await accRes.json();
+          const match = (accounts || []).find(acc => acc.Currency === escrow.currency);
+          if (match) {
+            fundingAccountId = match.accountId;
+          } else {
+            alert(`You do not have a deposit account in ${escrow.currency} to fund this escrow.`);
+            setIsActivating(false);
+            return;
+          }
+        } else {
+          throw new Error("Could not retrieve accounts from server.");
+        }
+      } catch (err) {
+        console.error("Failed to fetch funding accounts", err);
+        alert("Failed to verify your deposit accounts. Please try again.");
+        setIsActivating(false);
+        return;
+      }
+
       const response = await fetch(API_ENDPOINTS.ACTIVATE_AGREEMENT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -306,13 +330,15 @@ export default function EscrowDetail({ escrowId, onBack }) {
             Status: 'Active',
             EffectiveDate: escrow.effectiveDate,
             ExpiryDate: escrow.expiryDate,
-            CreatedBy: "0000002892",
+            CreatedBy: customerId,
             CreatedAt: escrow.createdAt,
             ValuePaid: escrow.valuePaid
           },
-          accountFrom: "0000006181"
+          accountFrom: fundingAccountId
         }),
       });
+
+
 
       if (response.ok) {
         console.log("Activation successful!");
@@ -452,7 +478,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
         <div className="lg:col-span-2 flex justify-between items-center">
           <h2 className="text-xl font-bold">Milestone Timeline</h2>
-          {escrow.status !== 'Active' && (
+          {escrow.status === 'Draft' && (
             <Button size="sm" onClick={() => setShowAddMilestone(!showAddMilestone)} variant={showAddMilestone ? 'ghost' : 'primary'}>
               {showAddMilestone ? 'Cancel' : <><Plus className="w-4 h-4 mr-2" /> Add Milestone</>}
             </Button>
@@ -466,7 +492,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
           <div className="sticky top-8 flex flex-col space-y-6">
             <div
-              className={cn("transition-all duration-300 group/card relative", escrow.status !== 'Active' ? "cursor-pointer" : "cursor-default")}
+              className="transition-all duration-300 group/card relative cursor-pointer"
               onClick={handleOpenEditAgreement}
             >
               {/* Vertical Divider Line - Attached to Card with padding */}
@@ -484,8 +510,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
                   )}>
                     {escrow.status === 'Draft' && <Unlock className="w-6 h-6 text-primary" />}
                     {escrow.status === 'Active' && <Lock className="w-6 h-6 text-white" />}
-                    {(escrow.status === 'Completed' || escrow.status === 'Finished') && <Check className="w-6 h-6 text-primary" />}
-                    {(!['Draft', 'Active', 'Completed', 'Finished'].includes(escrow.status)) && <Lock className="w-6 h-6 text-primary" />}
+                    {(escrow.status === 'Completed') && <Check className="w-6 h-6 text-primary" />}
+                    {(!['Draft', 'Active', 'Completed'].includes(escrow.status)) && <Lock className="w-6 h-6 text-primary" />}
                   </div>
                   <div className="flex flex-col pt-1">
                     <h3 className={cn(
@@ -532,10 +558,11 @@ export default function EscrowDetail({ escrowId, onBack }) {
                     <div className="flex justify-between text-sm pb-3">
                       <span className="text-[10px] font-bold text-textSecondary uppercase tracking-wider w-30">Status</span>
                       <span className={cn(
-                        "px-2 rounded-full text-[9px] font-bold uppercase tracking-tight",
-                        escrow.status === 'Active' ? "bg-emerald-500/10 text-emerald-600" :
-                          escrow.status === 'Draft' ? "bg-amber-500/10 text-amber-600" :
-                            "bg-slate-100 text-slate-500"
+                        "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tight",
+                        escrow.status === 'Draft' ? "bg-amber-500/10 text-amber-500" :
+                        escrow.status === 'Active' ? "bg-primary/10 text-primary" :
+                        escrow.status === 'Completed' ? "bg-emerald-500/10 text-emerald-500" :
+                        "bg-primary/10 text-primary"
                       )}>
                         {escrow.status}
                       </span>
@@ -621,8 +648,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
                         {/* Milestone Detail Card */}
                         <div
-                          className={cn("transition-all duration-300 h-full group/card", escrow.status !== 'Active' ? "cursor-pointer" : "cursor-default")}
-                          onClick={() => escrow.status !== 'Active' && handleOpenEdit(milestone)}
+                          className="transition-all duration-300 h-full group/card cursor-pointer"
+                          onClick={() => handleOpenEdit(milestone)}
                         >
                           <div className={cn(
                             "p-6 h-[240px] rounded-2xl border transition-all duration-500 relative overflow-hidden bg-white shadow-sm flex flex-col",
@@ -837,8 +864,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
               >
                 <GlassCard className="modal-panel p-8 shadow-none border-none">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-2xl font-bold">{escrow.status === 'Active' ? 'Milestone Details' : 'Edit Milestone'}</h3>
-                    {escrow.status !== 'Active' && (
+                    <h3 className="text-2xl font-bold">{escrow.status === 'Draft' ? 'Edit Milestone' : 'Milestone Details'}</h3>
+                    {escrow.status === 'Draft' && (
                       <button
                         onClick={deleteMilestone}
                         className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
@@ -858,7 +885,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         rows={3}
                         className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50 disabled:opacity-70 disabled:grayscale-[0.5]"
                         value={editingMilestone.Description}
-                        disabled={escrow.status === 'Active'}
+                        disabled={['Active', 'Completed'].includes(escrow.status)}
                         onChange={e => setEditingMilestone({ ...editingMilestone, Description: e.target.value })}
                       />
                     </div>
@@ -867,10 +894,10 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-sm font-bold text-textSecondary uppercase tracking-wider mb-2 block">Value</label>
                         <div className="relative">
                           <input
-                            type="number"
+                             type="number"
                             className="w-full bg-surface-hover/60 border border-border/80 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
                             value={editingMilestone.TransactionValue}
-                            disabled={escrow.status === 'Active'}
+                            disabled={escrow.status !== 'Draft'}
                             onChange={e => setEditingMilestone({ ...editingMilestone, TransactionValue: e.target.value })}
                           />
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary">$</span>
@@ -879,18 +906,18 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       <div>
                         <label className="text-sm font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expected Date</label>
                         <input
-                          type="date"
+                           type="date"
                           className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
                           value={editingMilestone.Date}
-                          disabled={escrow.status === 'Active'}
+                          disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingMilestone({ ...editingMilestone, Date: e.target.value })}
                         />
                       </div>
                     </div>
 
-                    <div className="pt-6 mt-2 border-t border-white/5 flex gap-4">
-                      <Button variant="ghost" className="flex-1" onClick={() => setShowEditMilestone(false)}>{escrow.status === 'Active' ? 'Close' : 'Cancel'}</Button>
-                      {escrow.status !== 'Active' && (
+                     <div className="pt-6 mt-2 border-t border-white/5 flex gap-4">
+                      <Button variant="ghost" className="flex-1" onClick={() => setShowEditMilestone(false)}>{escrow.status === 'Draft' ? 'Cancel' : 'Close'}</Button>
+                      {escrow.status === 'Draft' && (
                         <Button className="flex-1" onClick={submitEditMilestone} disabled={savingMilestone} pulse>
                           {savingMilestone ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                           {savingMilestone ? 'Saving Changes...' : 'Update Milestone'}
@@ -948,21 +975,21 @@ export default function EscrowDetail({ escrowId, onBack }) {
                     <div className="grid grid-cols-2 gap-6">
                       <div className="col-span-2">
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Agreement Title</label>
-                        <input
+                         <input
                           className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.Title}
-                          disabled={escrow.status === 'Active'}
+                          disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Title: e.target.value })}
                         />
                       </div>
 
                       <div className="col-span-2">
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Description</label>
-                        <textarea
+                         <textarea
                           rows={2}
                           className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-sans text-sm disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.Description}
-                          disabled={escrow.status === 'Active'}
+                          disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Description: e.target.value })}
                         />
                       </div>
@@ -970,20 +997,20 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       <div className="grid grid-cols-2 gap-6">
                         <div>
                           <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Contractor Account ID</label>
-                          <input
+                           <input
                             className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all uppercase font-mono disabled:opacity-50 disabled:grayscale"
                             value={editingAgreement.ContractorAccountId}
-                            disabled={escrow.status === 'Active'}
+                            disabled={escrow.status !== 'Draft'}
                             onChange={e => setEditingAgreement({ ...editingAgreement, ContractorAccountId: e.target.value })}
                           />
                         </div>
 
                         <div>
                           <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Contractor UEN</label>
-                          <input
+                           <input
                             className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono disabled:opacity-50 disabled:grayscale"
                             value={editingAgreement.ContractorUen || ''}
-                            disabled={escrow.status === 'Active'}
+                            disabled={escrow.status !== 'Draft'}
                             onChange={e => setEditingAgreement({ ...editingAgreement, ContractorUen: e.target.value })}
                           />
                         </div>
@@ -994,7 +1021,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <select
                           className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.Currency}
-                          disabled={escrow.status === 'Active'}
+                          disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Currency: e.target.value })}
                         >
                           {['USD', 'EUR', 'GBP', 'SGD', 'JPY'].map(cur => (
@@ -1012,7 +1039,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                             type="number"
                             className="w-full bg-surface-hover/60 border border-border/80 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium disabled:opacity-50 disabled:grayscale"
                             value={editingAgreement.TransactionValue}
-                            disabled={escrow.status === 'Active'}
+                            disabled={escrow.status !== 'Draft'}
                             onChange={e => setEditingAgreement({ ...editingAgreement, TransactionValue: e.target.value })}
                           />
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-textSecondary">$</span>
@@ -1024,7 +1051,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                           type="date"
                           className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.EffectiveDate}
-                          disabled={escrow.status === 'Active'}
+                          disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, EffectiveDate: e.target.value })}
                         />
                       </div>
@@ -1040,17 +1067,19 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       </div>
                     </div>
 
-                    <div className="pt-6 mt-4 border-t border-white/5 flex gap-4">
-                      <Button variant="ghost" onClick={() => setShowEditAgreement(false)}>Cancel</Button>
-                      <Button
-                        className="flex-1"
-                        onClick={submitEditAgreement}
-                        disabled={savingAgreement || escrow.status === 'Active'}
-                        pulse={escrow.status !== 'Active'}
-                      >
-                        {savingAgreement ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                        {savingAgreement ? 'Updating Details...' : 'Update Agreement'}
-                      </Button>
+                     <div className="pt-6 mt-4 border-t border-white/5 flex gap-4">
+                      <Button variant="ghost" onClick={() => setShowEditAgreement(false)}>{escrow.status === 'Draft' ? 'Cancel' : 'Close'}</Button>
+                      {escrow.status === 'Draft' && (
+                        <Button
+                          className="flex-1"
+                          onClick={submitEditAgreement}
+                          disabled={savingAgreement}
+                          pulse
+                        >
+                          {savingAgreement ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          {savingAgreement ? 'Updating Details...' : 'Update Agreement'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </GlassCard>

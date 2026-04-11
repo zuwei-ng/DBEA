@@ -85,8 +85,8 @@ export default function EscrowList({ onSelect, onCreateNew }) {
                     )}>
                       {escrow.status === 'Draft' && <Unlock className="w-6 h-6 text-primary" />}
                       {escrow.status === 'Active' && <Lock className="w-6 h-6 text-white" />}
-                      {(escrow.status === 'Completed' || escrow.status === 'Finished') && <CheckCircle2 className="w-6 h-6 text-primary" />}
-                      {(!['Draft', 'Active', 'Completed', 'Finished'].includes(escrow.status)) && <Lock className="w-6 h-6 text-primary" />}
+                      {(escrow.status === 'Completed') && <CheckCircle2 className="w-6 h-6 text-primary" />}
+                      {(!['Draft', 'Active', 'Completed'].includes(escrow.status)) && <Lock className="w-6 h-6 text-primary" />}
                     </div>
                     <h3 className="text-xl font-bold text-textPrimary group-hover:text-primary transition-colors line-clamp-1">
                       {escrow.title}
@@ -119,7 +119,7 @@ export default function EscrowList({ onSelect, onCreateNew }) {
                               "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight",
                               escrow.status === 'Draft' ? "bg-amber-500/10 text-amber-500" :
                               escrow.status === 'Active' ? "bg-primary/10 text-primary" :
-                              (escrow.status === 'Completed' || escrow.status === 'Finished') ? "bg-emerald-500/10 text-emerald-500" :
+                              (escrow.status === 'Completed') ? "bg-emerald-500/10 text-emerald-500" :
                               "bg-primary/10 text-primary"
                             )}>
                               {escrow.status}

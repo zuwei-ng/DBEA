@@ -2,18 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 import { API_ENDPOINTS } from '../lib/api';
 
-const mockTransactions = [
-  { id: 'tx-1', date: '2026-03-21', description: 'Acme Corp API Services', amount: -2450.00, currency: 'USD', status: 'Completed' },
-  { id: 'tx-2', date: '2026-03-20', description: 'TechStars Inc. Funding', amount: 150000.00, currency: 'USD', status: 'Completed' },
-  { id: 'tx-3', date: '2026-03-19', description: 'Cloudways Servers', amount: -320.50, currency: 'EUR', status: 'Pending' },
-];
 
-const mockWallets = [
-  { currency: 'USD', balance: 145000.00, symbol: '$' },
-  { currency: 'SGD', balance: 25000.00, symbol: 'S$' },
-  { currency: 'EUR', balance: 8400.00, symbol: '€' },
-  { currency: 'GBP', balance: 4100.00, symbol: '£' }
-];
 
 const currencySymbolMap = {
   'DZD': 'د.ج', 'ARS': 'AR$', 'AWG': 'Afl', 'AUD': 'A$',
@@ -54,11 +43,7 @@ function buildWalletsFromCurrencies(currencies) {
   }));
 }
 
-const mockMilestones = [
-  { id: 'm-1', title: 'Milestone 1: Wireframes', amount: 5000, status: 'Paid', proof: 'wireframes.pdf' },
-  { id: 'm-2', title: 'Milestone 2: Frontend', amount: 15000, status: 'Approved', proof: 'frontend_build.zip' },
-  { id: 'm-3', title: 'Milestone 3: Backend & Integration', amount: 15000, status: 'Pending', proof: null }
-];
+
 
 const MockStoreContext = createContext();
 
@@ -77,10 +62,10 @@ export function MockStoreProvider({ children }) {
   // If the persisted user has availableCurrencies (from onboarding), use those for wallets
   const initialWallets = (persistedUser?.availableCurrencies && Array.isArray(persistedUser.availableCurrencies))
     ? buildWalletsFromCurrencies(persistedUser.availableCurrencies)
-    : mockWallets;
+    : [];
 
   const [wallets, setWallets] = useState(initialWallets);
-  const [transactions, setTransactions] = useState(mockTransactions);
+  const [transactions, setTransactions] = useState([]);
   const [escrows, setEscrows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -90,8 +75,14 @@ export function MockStoreProvider({ children }) {
   const fetchAgreements = async () => {
     try {
       console.log("MockStore: Starting fetchAgreements...");
+      const customerId = user?.customerId;
+      if (!customerId) {
+        console.warn("MockStore: No customerId found for fetching agreements.");
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
-      const response = await fetch(`${API_ENDPOINTS.GET_AGREEMENTS}?CreatedBy=0000002892`);
+      const response = await fetch(`${API_ENDPOINTS.GET_AGREEMENTS}?CreatedBy=${customerId}`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       console.log("MockStore: Data received from API:", data);
@@ -153,7 +144,7 @@ export function MockStoreProvider({ children }) {
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
-    setWallets(mockWallets);
+    setWallets([]);
     localStorage.removeItem('isAuth');
     localStorage.removeItem('user');
   };
