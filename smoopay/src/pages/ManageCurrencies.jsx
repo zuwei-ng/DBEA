@@ -160,10 +160,91 @@ export default function ManageCurrencies() {
       }
       
       console.log('CalcCreditScore Process ID:', data);
-      setCodeStrings(prev => [...prev, `PROCESS_ID: ${data}`, "FETCHING_CREDIT_SCORE..."]);
+      let processId = typeof data === 'object' ? (data.ProcessId || data.processId || data.Id || JSON.stringify(data)) : data;
+      setCodeStrings(prev => [...prev, `PROCESS_ID: ${processId}`, "CHECKING_CALCULATION_PROGRESS..."]);
       
-      // Wait for the async process to complete, then fetch credit score
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      let calculationComplete = false;
+      let isError = false;
+      let polls = 0;
+      let maxPolls = 60; // Up to 3 minutes
+      
+      while (!calculationComplete && !isError && polls < maxPolls) {
+        polls++;
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Poll every 3 seconds
+        
+        try {
+          const progressUrl = `https://smuedu-dev.outsystemsenterprise.com/CreditScoring/rest/CreditEvaluationAPI/CheckCalcProgress?ProcessId=${encodeURIComponent(processId)}`;
+          const progressResponse = await fetch(progressUrl, {
+            method: 'GET',
+            headers: { 'X-Contacts-Key': '79a7f4cc-3ddc-4f8c-b1f3-557c7ff73af7' }
+          });
+          
+          const progressText = await progressResponse.text();
+          let statusCode = progressResponse.status;
+          let message = progressText;
+
+          let progressData = null;
+          try {
+            progressData = JSON.parse(progressText);
+            if (progressData && typeof progressData === 'object') {
+              if (progressData.StatusCode !== undefined) statusCode = parseInt(progressData.StatusCode);
+              else if (progressData.statusCode !== undefined) statusCode = parseInt(progressData.statusCode);
+              else if (progressData.Status !== undefined) statusCode = parseInt(progressData.Status);
+              else if (progressData.code !== undefined) statusCode = parseInt(progressData.code);
+              
+              if (progressData.Message !== undefined) message = progressData.Message;
+              else if (progressData.message !== undefined) message = progressData.message;
+            }
+          } catch(e) {}
+          
+          console.log(`Progress check ${polls} - Raw HTTP Status: ${progressResponse.status}, Parsed Code: ${statusCode}, Message: ${message}`);
+          
+          const textLower = progressText.toLowerCase();
+          const isErrorCalc = statusCode === 206 || textLower.includes('206') || textLower.includes('error calculation');
+          const isComplete = (statusCode === 200 || textLower.includes('200')) && (textLower.includes('calculation completed') || textLower.includes('complete') || textLower.includes('closed')) && !textLower.includes('ongoing');
+          const isOngoingMsg = statusCode === 102 || textLower.includes('102') || textLower.includes('ongoing calculation') || textLower.includes('ongoing');
+          
+          // If we can't strongly identify complete or error, we assume it's still ongoing!
+          const isActuallyOngoing = isOngoingMsg || (!isComplete && !isErrorCalc);
+
+          if (isErrorCalc) {
+            isError = true;
+            console.error('Calculation Error:', message);
+            setApiOutput({ error: 'Calculation Error', message: message });
+            clearInterval(interval);
+            setScanProgress(100);
+            setCodeStrings(prev => [...prev, `ERROR_CALCULATING_CREDIT_SCORE: ${message}`]);
+            setTimeout(() => setStatus('success'), 1000);
+            return;
+          } else if (isComplete) {
+            calculationComplete = true;
+            setCodeStrings(prev => [...prev, "CALCULATION_COMPLETE", "FINALIZING_DATA...", "FETCHING_CREDIT_SCORE..."]);
+            // Short delay to allow backend to finish transactions
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            break;
+          } else if (isActuallyOngoing) {
+            setCodeStrings(prev => {
+              const lastMsg = prev[prev.length - 1];
+              if (lastMsg && lastMsg.startsWith("CALCULATION_ONGOING")) {
+                return [...prev.slice(0, -1), lastMsg + "."];
+              }
+              // Print an explicit status log to show checking is happening 
+              return [...prev, `API STATUS: ${message}`, "CALCULATION_ONGOING..."];
+            });
+          }
+        } catch (err) {
+          console.error("Error checking progress:", err);
+        }
+      }
+      
+      if (!calculationComplete && !isError) {
+         setApiOutput({ error: 'Timeout', message: 'Calculation timed out after 3 minutes.' });
+         clearInterval(interval);
+         setScanProgress(100);
+         setCodeStrings(prev => [...prev, "TIMEOUT_ERROR_CALCULATING_CREDIT_SCORE"]);
+         setTimeout(() => setStatus('success'), 1000);
+         return;
+      }
       
       const getCreditScoreUrl = `https://smuedu-dev.outsystemsenterprise.com/CreditScoring/rest/CreditEvaluationAPI/GetCreditScore?CustomerID=${encodeURIComponent(customerId)}`;
       
