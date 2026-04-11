@@ -9,6 +9,7 @@ import { useMockStore } from '../store/MockStore';
 
 export default function ManageCurrencies() {
   const { user } = useMockStore();
+
   const [status, setStatus] = useState('idle'); // idle, scanning, success
   const [scanProgress, setScanProgress] = useState(0);
   const [codeStrings, setCodeStrings] = useState([]);
@@ -23,7 +24,7 @@ export default function ManageCurrencies() {
     "ANALYZING_CASH_FLOW...",
     "VERIFYING_BALANCE_SHEET...",
     "CALCULATING_CREDIT_SCORE...",
-    "CONTACTING_CREDIT_BUREAU...",
+    ...(user?.ficoScore ? [`CACHED_FICO_SCORE_RETRIEVED: ${JSON.stringify(user.ficoScore)}`] : ["CONTACTING_CREDIT_BUREAU..."]),
     "EVALUATING_RISK_PROFILE...",
     "CREDIT_EVALUATION_COMPLETE: APPROVED",
     "CLEARANCE_GRANTED."
@@ -266,7 +267,24 @@ export default function ManageCurrencies() {
       }
       
       console.log('GetCreditScore Result:', scoreData);
-      setApiOutput(scoreData);
+      
+      // Now perfectly pull the verified master score from VerifyUser Composite
+      let verifiedData = null;
+      try {
+        const uen = user?.uen || "UEN999";
+        const name = user?.profileData?.givenName || user?.name || "SMU TRADING";
+        const verifiedUrl = `/api-proxy-3/VerifyUserCompositeService/rest/VerifyUser/VerifyUser?CustomerId=${encodeURIComponent(customerId)}&UEN=${encodeURIComponent(uen)}&GivenName=${encodeURIComponent(name)}`;
+        const verifyResponse = await fetch(verifiedUrl);
+        if (verifyResponse.ok) {
+           const vData = await verifyResponse.json();
+           verifiedData = Array.isArray(vData) ? vData[0] : vData;
+           console.log('VerifyUser After Upload Result:', verifiedData);
+        }
+      } catch (err) {
+        console.error("Error fetching VerifyUser API during finalize:", err);
+      }
+      
+      setApiOutput({ ...scoreData, VerifiedScoreData: verifiedData });
       
       clearInterval(interval);
       setScanProgress(100);
@@ -484,32 +502,79 @@ export default function ManageCurrencies() {
                     <div className="w-full space-y-4 mt-4">
                       {/* Score & Grade */}
                       <div className="flex items-center justify-center gap-6">
-                        <div className="text-center">
-                          <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Credit Score</p>
-                          <motion.p 
-                            initial={{ opacity: 0, y: 10 }} 
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl font-black text-primary"
-                          >
-                            {Math.round(apiOutput.CreditScore)}
-                          </motion.p>
-                        </div>
-                        <div className="w-px h-12 bg-border"></div>
-                        <div className="text-center">
-                          <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Risk Grade</p>
-                          <motion.p 
-                            initial={{ opacity: 0, y: 10 }} 
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className={cn(
-                              "text-3xl font-black",
-                              apiOutput.CreditScore >= 700 ? "text-emerald-400" :
-                              apiOutput.CreditScore >= 500 ? "text-amber-400" : "text-red-400"
-                            )}
-                          >
-                            {apiOutput.RiskGrade}
-                          </motion.p>
-                        </div>
+                        {apiOutput.VerifiedScoreData ? (
+                          <>
+                            <div className="text-center">
+                              <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Verified Score</p>
+                              <motion.p 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-4xl font-black text-blue-400"
+                              >
+                                {(() => {
+                                  const data = apiOutput.VerifiedScoreData;
+                                  const score = data.CreditScore !== undefined ? data.CreditScore : data.Id;
+                                  if (!score || score === "") return "N/A";
+                                  const rounded = Math.round(Number(score));
+                                  return !isNaN(rounded) ? rounded : score;
+                                })()}
+                              </motion.p>
+                            </div>
+                            {(() => {
+                                  const data = apiOutput.VerifiedScoreData;
+                                  const grade = data.CreditGrade || data.CreditBand;
+                                  if (grade && grade !== "") {
+                                    return (
+                                      <>
+                                        <div className="w-px h-12 bg-border"></div>
+                                        <div className="text-center">
+                                          <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Credit Grade</p>
+                                          <motion.p 
+                                            initial={{ opacity: 0, y: 10 }} 
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.3 }}
+                                            className="text-3xl font-black text-emerald-400"
+                                          >
+                                            {grade}
+                                          </motion.p>
+                                        </div>
+                                      </>
+                                    );
+                                  }
+                                  return null;
+                            })()}
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-center">
+                              <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Verified Score</p>
+                              <motion.p 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-4xl font-black text-primary"
+                              >
+                                {apiOutput.CreditScore ? Math.round(apiOutput.CreditScore) : "N/A"}
+                              </motion.p>
+                            </div>
+                            <div className="w-px h-12 bg-border"></div>
+                            <div className="text-center">
+                              <p className="text-xs text-textSecondary uppercase tracking-wider mb-1">Credit Grade</p>
+                              <motion.p 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className={cn(
+                                  "text-3xl font-black",
+                                  apiOutput.CreditScore >= 700 ? "text-emerald-400" :
+                                  apiOutput.CreditScore >= 500 ? "text-amber-400" : "text-red-400"
+                                )}
+                              >
+                                {apiOutput.RiskGrade || "N/A"}
+                              </motion.p>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Details */}

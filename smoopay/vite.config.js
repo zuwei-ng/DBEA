@@ -21,6 +21,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api-proxy-2/, ''),
       },
+      '/api-proxy-3': {
+        target: 'https://personal-ldjy5itc.outsystemscloud.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-proxy-3/, ''),
+      },
       '/s3-proxy': {
         target: 'https://smuedu-dev.outsystemsenterprise.com',
         changeOrigin: true,

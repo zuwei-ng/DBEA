@@ -130,6 +130,22 @@ export default function SignUp() {
          console.error("Gateway Customer API failed:", await secondResponse.text());
       }
 
+      setProcessingStatus("Verifying User Credit Score...");
+      let ficoScoreData = null;
+      try {
+         const ficoGivenName = formData.givenName || 'Smoopay TESTER';
+         const ficoUEN = formData.icNumber || 'UEN929292';
+         const customerId = formData.customerId || formData.id || 'DEMO-CUST';
+         const ficoUrl = `/api-proxy-3/VerifyUserCompositeService/rest/VerifyUser/VerifyUser?CustomerId=${encodeURIComponent(customerId)}&UEN=${encodeURIComponent(ficoUEN)}&GivenName=${encodeURIComponent(ficoGivenName)}`;
+         const ficoRes = await fetch(ficoUrl);
+         if (ficoRes.ok) {
+            ficoScoreData = await ficoRes.json();
+            console.log("Verified User Credit Result:", ficoScoreData);
+         }
+      } catch (e) {
+         console.error("FICO fetch error:", e);
+      }
+
       setProcessingStatus("Executing Final Validation...");
       const uenToUse = formData.icNumber || 'TESTUEN111';
       const pwToUse = formData.password || 'Test1234!';
@@ -139,7 +155,10 @@ export default function SignUp() {
       const verifyJson = await verifyRes.json();
       
       if (verifyJson.IsSuccess) {
-         setVerifiedData(verifyJson);
+         setVerifiedData({
+           ...verifyJson,
+           ficoScore: ficoScoreData
+         });
       }
     } catch (error) {
        console.error("Submission error:", error);
@@ -190,7 +209,8 @@ export default function SignUp() {
                 givenName: finalGivenName
               },
               customerId: verifiedData?.CustomerId || '-',
-              uen: verifiedData?.UEN || formData.icNumber || 'TESTUEN111'
+              uen: verifiedData?.UEN || formData.icNumber || 'TESTUEN111',
+              ficoScore: verifiedData?.ficoScore || null
             });
           }, 1000);
         }
