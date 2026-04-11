@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 import { API_ENDPOINTS } from '../lib/api';
+import { getCurrencySymbol } from '../lib/currencyUtils';
 
 const mockTransactions = [
   { id: 'tx-1', date: '2026-03-21', description: 'Acme Corp API Services', amount: -2450.00, currency: 'USD', status: 'Completed' },
@@ -9,48 +10,17 @@ const mockTransactions = [
 ];
 
 const mockWallets = [
-  { currency: 'USD', balance: 145000.00, symbol: '$' },
-  { currency: 'SGD', balance: 25000.00, symbol: 'S$' },
-  { currency: 'EUR', balance: 8400.00, symbol: '€' },
-  { currency: 'GBP', balance: 4100.00, symbol: '£' }
+  { currency: 'USD', balance: 145000.00, symbol: getCurrencySymbol('USD') },
+  { currency: 'SGD', balance: 25000.00, symbol: getCurrencySymbol('SGD') },
+  { currency: 'EUR', balance: 8400.00, symbol: getCurrencySymbol('EUR') },
+  { currency: 'GBP', balance: 4100.00, symbol: getCurrencySymbol('GBP') }
 ];
-
-const currencySymbolMap = {
-  'DZD': 'د.ج', 'ARS': 'AR$', 'AWG': 'Afl', 'AUD': 'A$',
-  'BSD': 'B$', 'BHD': 'BD', 'BDT': '৳', 'BBD': 'Bds$',
-  'BZD': 'BZ$', 'BMD': 'BD$', 'BTN': 'Nu', 'BOB': 'Bs',
-  'BWP': 'P', 'BND': 'B$', 'BIF': 'FBu', 'CVE': 'Esc',
-  'KHR': '៛', 'CAD': 'C$', 'KYD': 'CI$', 'CLP': 'CL$',
-  'CNY': '¥', 'COP': 'CO$', 'KMF': 'CF', 'CRC': '₡',
-  'HRK': 'kn', 'CUP': '₱', 'DKK': 'kr', 'DJF': 'Fdj',
-  'DOP': 'RD$', 'EGP': 'E£', 'SVC': '₡', 'SZL': 'E',
-  'ETB': 'Br', 'EUR': '€', 'FKP': 'FK£', 'GMD': 'D',
-  'GIP': '£', 'GBP': '£', 'GTQ': 'Q', 'GNF': 'FG',
-  'GYD': 'G$', 'HTG': 'G', 'HNL': 'L', 'HKD': 'HK$',
-  'HUF': 'Ft', 'ISK': 'kr', 'INR': '₹', 'IDR': 'Rp',
-  'IQD': 'ع.د', 'ILS': '₪', 'JMD': 'J$', 'JPY': '¥',
-  'JOD': 'JD', 'KZT': '₸', 'KES': 'KSh', 'KPW': '₩',
-  'KWD': 'KD', 'LAK': '₭', 'LVL': 'Ls', 'LBP': 'L£',
-  'LSL': 'M', 'LRD': 'L$', 'LYD': 'LD', 'LTL': 'Lt',
-  'MOP': 'MOP$', 'MWK': 'MK', 'MYR': 'RM', 'MVR': 'Rf',
-  'MRO': 'UM', 'MUR': '₨', 'MNT': '₮', 'MAD': 'MAD',
-  'MMK': 'K', 'NZD': 'NZ$', 'NIO': 'C$', 'NGN': '₦',
-  'NOK': 'kr', 'OMR': 'ر.ع', 'PKR': '₨', 'XPD': 'XPD',
-  'PAB': 'B/', 'PGK': 'K', 'PYG': '₲', 'PEN': 'S/',
-  'PHP': '₱', 'QAR': 'QR', 'RUB': '₽', 'WST': 'WS$',
-  'SAR': 'SR', 'SCR': '₨', 'SLL': 'Le', 'SGD': 'S$',
-  'SBD': 'SI$', 'SOS': 'Sh', 'ZAR': 'R', 'LKR': '₨',
-  'SEK': 'kr', 'CHF': 'CHF', 'SYP': 'S£', 'TWD': 'NT$',
-  'TZS': 'TSh', 'THB': '฿', 'TTD': 'TT$', 'TND': 'DT',
-  'AED': 'د.إ', 'USD': '$', 'VUV': 'VT', 'VND': '₫',
-  'ZMK': 'ZK'
-};
 
 function buildWalletsFromCurrencies(currencies) {
   return currencies.map(code => ({
     currency: code,
     balance: 0.00,
-    symbol: currencySymbolMap[code] || code
+    symbol: getCurrencySymbol(code) || code
   }));
 }
 
