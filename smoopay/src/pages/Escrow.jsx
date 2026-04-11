@@ -16,12 +16,11 @@ export default function Escrow() {
   };
 
   const handleCreateSuccess = (newId) => {
-    console.log("Creation successful, handling callback in Escrow.jsx. New ID:", newId);
+    console.log("Creation successful, jumping to details. New ID:", newId);
     setIsCreating(false);
-    setSelectedEscrowId(null); // Return to list view
+    setSelectedEscrowId(newId); // Navigate to details view
     
     // Trigger the refresh of global state
-    console.log("Triggering fetchAgreements from MockStore...");
     fetchAgreements();
   };
 

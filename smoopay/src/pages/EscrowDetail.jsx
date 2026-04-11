@@ -40,6 +40,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
   const [approvingMilestoneId, setApprovingMilestoneId] = useState(null);
   const [isFetchingFile, setIsFetchingFile] = useState(false);
   const [fetchingFileId, setFetchingFileId] = useState(null);
+  const [availableCurrencies, setAvailableCurrencies] = useState([]);
   const fetchEscrowDetails = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -93,6 +94,29 @@ export default function EscrowDetail({ escrowId, onBack }) {
   useEffect(() => {
     fetchEscrowDetails();
   }, [fetchEscrowDetails]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!user?.customerId && !user?.uen) return;
+      try {
+        const identifier = user.customerId || user.uen;
+        const response = await fetch(`${API_ENDPOINTS.GET_ACCOUNTS_BY_UEN}?UENorCustID=${identifier}`);
+        const data = await response.json();
+        
+        const accountList = data.Data || data || [];
+        if (Array.isArray(accountList) && accountList.length > 0) {
+          const currencies = Array.from(new Set(accountList.map(acc => acc.Currency).filter(Boolean)));
+          if (currencies.length > 0) {
+            setAvailableCurrencies(currencies);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching accounts for currencies:", error);
+      }
+    };
+
+    fetchAccounts();
+  }, [user]);
 
   if (loading) {
     return (
@@ -1043,7 +1067,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Currency: e.target.value })}
                         >
-                          {['USD', 'EUR', 'GBP', 'SGD', 'JPY'].map(cur => (
+                           {availableCurrencies.map(cur => (
                             <option key={cur} value={cur} className="bg-background">{cur}</option>
                           ))}
                         </select>

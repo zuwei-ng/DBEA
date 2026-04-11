@@ -18,7 +18,7 @@ export default function CreateAgreement({ onBack, onSuccess }) {
     ContractorAccountId: "",
     ContractorUen: "",
     TransactionValue: "",
-    Currency: "USD",
+    Currency: "",
     Status: "Draft",
     EffectiveDate: new Date().toISOString().split('T')[0],
     ExpiryDate: ""

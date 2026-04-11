@@ -7,7 +7,7 @@ export const API_ENDPOINTS = {
   GET_AGREEMENTS: `${BASE_URL_2}/Agreement/rest/Agreement/GetAgreements`,
   GET_ALL_INFO: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/GetAgreementAllInfo`,
   UPDATE_AGREEMENT: `${BASE_URL_2}/Agreement/rest/Agreement/UpdateAgreement`,
-  DELETE_AGREEMENT: `${BASE_URL_2}/Agreement/rest/Agreement/DeleteAgreement`,
+  DELETE_AGREEMENT: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/DeleteAgreementAllInfo`,
   CREATE_AGREEMENT: `${BASE_URL_2}/Agreement/rest/Agreement/CreateAgreement`,
   ACTIVATE_AGREEMENT: `${BASE_URL_2}/ManageEscrow/rest/ManageEscrow/ActivateAgreement`,
 
