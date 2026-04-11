@@ -30,3 +30,36 @@ export const currencyFlags = {
 };
 
 export const getCurrencyFlag = (currency) => currencyFlags[currency] || '🏳️';
+
+export const currencySymbols = {
+  DZD: 'د.ج', ARS: 'AR$', AWG: 'Afl', AUD: 'A$',
+  BSD: 'B$', BHD: 'BD', BDT: '৳', BBD: 'Bds$',
+  BZD: 'BZ$', BMD: 'BD$', BTN: 'Nu', BOB: 'Bs',
+  BWP: 'P', BND: 'B$', BIF: 'FBu', CVE: 'Esc',
+  KHR: '៛', CAD: 'C$', KYD: 'CI$', CLP: 'CL$',
+  CNY: '¥', COP: 'CO$', KMF: 'CF', CRC: '₡',
+  HRK: 'kn', CUP: '₱', DKK: 'kr', DJF: 'Fdj',
+  DOP: 'RD$', EGP: 'E£', SVC: '₡', SZL: 'E',
+  ETB: 'Br', EUR: '€', FKP: 'FK£', GMD: 'D',
+  GIP: '£', GBP: '£', GTQ: 'Q', GNF: 'FG',
+  GYD: 'G$', HTG: 'G', HNL: 'L', HKD: 'HK$',
+  HUF: 'Ft', ISK: 'kr', INR: '₹', IDR: 'Rp',
+  IQD: 'ع.د', ILS: '₪', JMD: 'J$', JPY: '¥',
+  JOD: 'JD', KZT: '₸', KES: 'KSh', KPW: '₩',
+  KWD: 'KD', LAK: '₭', LVL: 'Ls', LBP: 'L£',
+  LSL: 'M', LRD: 'L$', LYD: 'LD', LTL: 'Lt',
+  MOP: 'MOP$', MWK: 'MK', MYR: 'RM', MVR: 'Rf',
+  MRO: 'UM', MUR: '₨', MNT: '₮', MAD: 'MAD',
+  MMK: 'K', NZD: 'NZ$', NIO: 'C$', NGN: '₦',
+  NOK: 'kr', OMR: 'ر.ع', PKR: '₨', XPD: 'XPD',
+  PAB: 'B/', PGK: 'K', PYG: '₲', PEN: 'S/',
+  PHP: '₱', QAR: 'QR', RUB: '₽', WST: 'WS$',
+  SAR: 'SR', SCR: '₨', SLL: 'Le', SGD: 'S$',
+  SBD: 'SI$', SOS: 'Sh', ZAR: 'R', LKR: '₨',
+  SEK: 'kr', CHF: 'CHF', SYP: 'S£', TWD: 'NT$',
+  TZS: 'TSh', THB: '฿', TTD: 'TT$', TND: 'DT',
+  AED: 'د.إ', USD: '$', VUV: 'VT', VND: '₫',
+  ZMK: 'ZK',
+};
+
+export const getCurrencySymbol = (currency) => currencySymbols[currency] || '';

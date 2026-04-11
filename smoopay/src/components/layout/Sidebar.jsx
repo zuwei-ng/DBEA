@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useMockStore } from '../../store/MockStore';
-import { LayoutDashboard, Send, ShieldCheck, UserCheck, Settings, LogOut, FileText, Receipt } from 'lucide-react';
+import { LayoutDashboard, Send, ShieldCheck, UserCheck, LogOut, FileText, Receipt } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 
@@ -62,10 +62,6 @@ export default function Sidebar() {
         ))}
       </div>
       <div className="p-4 border-t border-border shrink-0 space-y-2">
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-textSecondary hover:text-textPrimary hover:bg-surface-hover/50 w-full transition-all group">
-          <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-          Settings
-        </button>
         <button 
           onClick={logout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 w-full transition-all group font-medium"
