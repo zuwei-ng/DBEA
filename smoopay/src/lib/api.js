@@ -1,5 +1,6 @@
 const BASE_URL_1 = '/api-proxy-1';
 const BASE_URL_2 = '/api-proxy-2';
+const TBANK_PROXY = '/s3-proxy'; // smuedu-dev.outsystemsenterprise.com is already proxied here
 
 export const API_ENDPOINTS = {
   // Agreement Management
@@ -23,8 +24,20 @@ export const API_ENDPOINTS = {
 
   // Amazon S3 File Fetch
   FETCH_FILE: '/s3-proxy/SMULab_AmazonS3/rest/AmazonS3/FetchFile',
-  S3_API_KEY: '79a7f4cc-3ddc-4f8c-b1f3-557c7ff73af7'
+  S3_API_KEY: '79a7f4cc-3ddc-4f8c-b1f3-557c7ff73af7',
+
+  // tBank Cash Operations — CustomerID is substituted at call time
+  DEPOSIT_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/DepositCash`,
+  WITHDRAW_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/WithdrawCash`,
 };
+
+/**
+ * Generates a unique 10-digit transactionId string as required by tBank API.
+ */
+export function generateTransactionId() {
+  const ts = Date.now().toString(); // 13 digits
+  return ts.slice(-10); // last 10 digits
+}
 
 /**
  * Common API Client for standardized requests

@@ -174,8 +174,8 @@ export default function Transfer() {
                     {isPast ? <Check className="w-5 h-5" /> : step.id}
                   </motion.div>
                   <span className={cn(
-                    "text-xs font-medium text-center transition-colors duration-300",
-                    isActive ? "text-primary text-sm shadow-glow font-bold" : "text-textSecondary"
+                    "text-xs font-medium text-center transition-colors duration-300 leading-tight bg-transparent px-0 py-0 rounded-none",
+                    isActive ? "text-primary text-sm font-bold" : "text-textSecondary"
                   )}>{step.name}</span>
                 </div>
               );
@@ -197,13 +197,15 @@ export default function Transfer() {
                       <div>
                         <label className="text-sm text-textSecondary mb-2 block font-medium uppercase tracking-wider">Business UEN</label>
                         <div className="flex gap-3">
-                          <input
-                            type="text"
-                            value={recipientUEN}
-                            onChange={e => setRecipientUEN(e.target.value)}
-                            className="flex-1 bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-textPrimary placeholder-textSecondary/30"
-                            placeholder="e.g. T12LL1234A"
-                          />
+                          <div className="flex flex-1 items-center bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus-within:border-primary transition-colors">
+                            <input
+                              type="text"
+                              value={recipientUEN}
+                              onChange={e => setRecipientUEN(e.target.value)}
+                              className="flex-1 bg-transparent focus:outline-none text-textPrimary placeholder-textSecondary/40"
+                              placeholder="e.g. 202412345M"
+                            />
+                          </div>
                           <Button
                             variant="secondary"
                             onClick={handleFetchAccounts}
