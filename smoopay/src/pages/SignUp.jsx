@@ -58,12 +58,14 @@ export default function SignUp() {
 
   const submitData = async () => {
     setIsProcessing(true);
-    setProcessingStatus("Creating Corporate Profile...");
+    setProcessingStatus("Step 1: Constructing User Profile...");
+
     try {
+      // STEP 1: Construct User Payload
       const payload = {
-        icNumber: formData.icNumber || 'UEN929292',
+        icNumber: formData.icNumber || "UEN929292",
         familyName: "-",
-        givenName: formData.givenName || 'Smoopay TESTER',
+        givenName: formData.givenName || "Smoopay TESTER",
         dateOfBirth: "2014-12-31",
         gender: "-",
         occupation: "-",
@@ -78,7 +80,7 @@ export default function SignUp() {
         phoneCountryCode: "+65",
         phoneAreaCode: "-",
         phoneLocalNumber: "-",
-        preferredUserld: formData.preferredUserld || "smoopay123",
+        preferredUserld: formData.preferredUserld || "smoopay123", // Using corrected key 'preferredUserld' (with lowercase L)
         currency: "SGD",
         positionTitle: "-",
         yearOfService: 0,
@@ -96,22 +98,25 @@ export default function SignUp() {
         annualSalary: 120000
       };
 
-      const firstResponse = await fetch("https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/StoreCustomerCredential", {
+      // STEP 2: Store Customer Credentials
+      setProcessingStatus("Step 2: Storing Credentials...");
+      const storeRes = await fetch("https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/StoreCustomerCredential", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       
-      if (!firstResponse.ok) {
-        console.error("StoreCustomerCredential failed:", await firstResponse.text());
+      if (!storeRes.ok) {
+        throw new Error(`Credential storage failed (Status: ${storeRes.status})`);
       }
 
-      setProcessingStatus("Verifying Gateway Link...");
+      // STEP 3: Create Customer Profile
+      setProcessingStatus("Step 3: Creating Banking Profile...");
       const username = "12173e30ec556fe4a951";
       const pw = "2fbbd75fd60a8389b82719d2dbc37f1eb9ed226f3eb43cfa7d9240c72fd5+bfc89ad4-c17f-4fe9-82c2-918d29d59fe0";
       const basicAuth = btoa(`${username}:${pw}`);
 
-      const secondResponse = await fetch("https://smuedu-dev.outsystemsenterprise.com/gateway/rest/customer/", {
+      const profileRes = await fetch("https://smuedu-dev.outsystemsenterprise.com/gateway/rest/customer/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,41 +125,55 @@ export default function SignUp() {
         body: JSON.stringify(payload)
       });
 
-      if (!secondResponse.ok) {
-         console.error("Gateway Customer API failed:", await secondResponse.text());
+      if (!profileRes.ok) {
+         const errorBody = await profileRes.text();
+         console.error("Banking profile creation failed:", errorBody);
+         throw new Error(`Banking profile creation failed (Status: ${profileRes.status}). Details: ${errorBody.slice(0, 100)}`);
       }
 
-      setProcessingStatus("Verifying User Credit Score...");
-      let ficoScoreData = null;
-      try {
-         const ficoGivenName = formData.givenName || 'Smoopay TESTER';
-         const ficoUEN = formData.icNumber || 'UEN929292';
-         const customerId = 'DEMO-CUST';
-         const ficoUrl = `/api-proxy-3/VerifyUserCompositeService/rest/VerifyUser/VerifyUser?CustomerId=${encodeURIComponent(customerId)}&UEN=${encodeURIComponent(ficoUEN)}&GivenName=${encodeURIComponent(ficoGivenName)}`;
-         const ficoRes = await fetch(ficoUrl);
-         if (ficoRes.ok) {
-            ficoScoreData = await ficoRes.json();
-         }
-      } catch (e) {
-         console.error("FICO fetch error:", e);
-      }
-
-      setProcessingStatus("Executing Final Validation...");
-      const uenToUse = formData.icNumber || 'UEN929292';
-      const pwToUse = formData.password || 'password114';
+      // STEP 4: Verify Login and Create Session
+      setProcessingStatus("Step 4: Authenticating Session...");
+      const uenToUse = payload.icNumber;
+      const pwToUse = payload.password;
       const verifyUrl = `https://personal-urfnoedc.outsystemscloud.com/Authentication/rest/Authentication/VerifyLogin?UEN=${encodeURIComponent(uenToUse)}&Password=${encodeURIComponent(pwToUse)}`;
       
       const verifyRes = await fetch(verifyUrl);
       const verifyJson = await verifyRes.json();
       
-      if (verifyJson.IsSuccess) {
-         setVerifiedData({
-           ...verifyJson,
-           ficoScore: ficoScoreData
-         });
+      if (!verifyRes.ok || !verifyJson.IsSuccess) {
+         throw new Error(verifyJson.Message || "Session authentication failed.");
       }
+
+      const verifiedDetails = {
+        CustomerId: verifyJson.CustomerId || verifyJson.customerID || verifyJson.customerId || '-',
+        GivenName: verifyJson.GivenName || verifyJson.givenName || payload.givenName,
+        UEN: verifyJson.UEN || verifyJson.uen || payload.icNumber
+      };
+
+      // STEP 5: Retrieve FICO Score (Non-blocking)
+      setProcessingStatus("Step 5: Retrieving Credit Assessment...");
+      let ficoScoreData = null;
+      try {
+         const ficoUrl = `https://personal-ldjy5itc.outsystemscloud.com/FICOService/rest/FICOScore/CheckFICOScoreByGivenName?givenName=${encodeURIComponent(verifiedDetails.GivenName)}&UENNumber=${encodeURIComponent(verifiedDetails.UEN)}`;
+         const ficoRes = await fetch(ficoUrl);
+         if (ficoRes.ok) {
+            ficoScoreData = await ficoRes.json();
+         }
+      } catch (e) {
+         console.warn("Non-blocking FICO score fetch failed:", e);
+      }
+
+      // STEP 6: Prepare Final Data for Dashboard Redirect
+      setProcessingStatus("Step 6: Finalizing Onboarding...");
+      setVerifiedData({
+        ...verifiedDetails,
+        ficoScore: ficoScoreData
+      });
+
     } catch (error) {
-       console.error("Submission error:", error);
+       console.error("Signup Flow Error:", error);
+       alert("Sign up failed: " + error.message);
+       setIsProcessing(false);
     }
   };
 
@@ -170,8 +189,8 @@ export default function SignUp() {
             updateUser({ 
               onboardingStep: 5, 
               isNewUser: false,
-              name: formData.givenName,
-              profileData: { givenName: formData.givenName },
+              name: verifiedData?.GivenName || formData.givenName,
+              profileData: { givenName: verifiedData?.GivenName || formData.givenName },
               customerId: verifiedData?.CustomerId || '-',
               uen: verifiedData?.UEN || formData.icNumber || 'TESTUEN111',
               ficoScore: verifiedData?.ficoScore || null

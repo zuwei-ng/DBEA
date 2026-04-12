@@ -26,9 +26,9 @@ export const API_ENDPOINTS = {
   FETCH_FILE: '/s3-proxy/SMULab_AmazonS3/rest/AmazonS3/FetchFile',
   S3_API_KEY: '79a7f4cc-3ddc-4f8c-b1f3-557c7ff73af7',
 
-  // tBank Cash Operations — CustomerID is substituted at call time
-  DEPOSIT_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/DepositCash`,
-  WITHDRAW_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/WithdrawCash`,
+  // tBank Cash Operations — CustomerID is used in path and query param
+  DEPOSIT_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/DepositCash?CustomerID=${encodeURIComponent(customerId)}`,
+  WITHDRAW_CASH: (customerId) => `${TBANK_PROXY}/Gateway/rest/Account/${encodeURIComponent(customerId)}/WithdrawCash?CustomerID=${encodeURIComponent(customerId)}`,
   CREATE_DEPOSIT_ACCOUNT: `${TBANK_PROXY}/Gateway/rest/Account/CreateDepositAccount`,
 };
 

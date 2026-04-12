@@ -341,7 +341,7 @@ export default function ManageCurrencies() {
                     {fileEntries.length > 0 ? `${fileEntries.length} file(s) selected` : "Upload Financials"}
                   </h3>
                   <p className="text-xs text-textSecondary max-w-xs mb-4">
-                    {fileEntries.length > 0 ? "Set document types for each file, then submit." : "Drag and drop your PDF/CSV files here, or click to browse. You can upload multiple files."}
+                    {fileEntries.length > 0 ? "Set document types for each file, then submit." : "Drag and drop your PDF files here, or click to browse. You can upload multiple files."}
                   </p>
 
                   {/* File list with per-file document type checkboxes */}

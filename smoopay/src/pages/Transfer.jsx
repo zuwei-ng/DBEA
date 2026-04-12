@@ -141,7 +141,7 @@ export default function Transfer() {
     }
   };
 
-  const selectedSenderAccount = senderAccounts.find(a => a.accountId === sourceAccountId);
+  const selectedSenderAccount = senderAccounts?.find?.(a => a.accountId === sourceAccountId);
   const displaySourceCurrency = selectedSenderAccount?.Currency || 'SGD';
 
   return (
@@ -265,7 +265,7 @@ export default function Transfer() {
                                 </div>
                                 <div className="text-right">
                                   <span className="text-sm font-bold text-primary">
-                                    {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {acc.Currency}
+                                    {acc.balance?.toLocaleString?.(undefined, { minimumFractionDigits: 2 }) || '0.00'} {acc.Currency}
                                   </span>
                                   <span className="block text-[10px] text-textSecondary">Available Balance</span>
                                 </div>
@@ -300,7 +300,7 @@ export default function Transfer() {
                         >
                           {senderAccounts.map(acc => (
                             <option key={acc.accountId} value={acc.accountId} className="bg-background text-sm">
-                              {getCurrencyFlag(acc.Currency)} {acc.Currency} (Bal: {acc.balance?.toLocaleString(undefined, { minimumFractionDigits: 2 })})
+                              {getCurrencyFlag(acc.Currency)} {acc.Currency} (Bal: {acc.balance?.toLocaleString?.(undefined, { minimumFractionDigits: 2 }) || '0.00'})
                             </option>
                           ))}
                         </select>
@@ -397,8 +397,8 @@ export default function Transfer() {
           ...completedTxDetails,
           id: completedTxDetails.ReferenceNumber || completedTxDetails.transactionReferenceNumber || reference,
           date: new Date(completedTxDetails.TransferDateTime || completedTxDetails.transactionDate || Date.now()).toLocaleDateString(),
-          description: `Transfer to ${completedTxDetails.RecipientName || completedTxDetails.accountTo}`,
-          amount: -(completedTxDetails.TransactionAmount || completedTxDetails.transactionAmount || transferAmount),
+          description: `Transfer to ${completedTxDetails.RecipientName || completedTxDetails.accountTo ||  "Beneficiary"}`,
+          amount: -(completedTxDetails.TransactionAmount || completedTxDetails.transactionAmount || parseFloat(transferAmount) || 0),
           currency: completedTxDetails.AccountFromCurrency || displaySourceCurrency,
           status: 'Completed'
         } : null} 
