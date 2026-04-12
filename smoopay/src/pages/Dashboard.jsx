@@ -164,11 +164,15 @@ export default function Dashboard() {
       const label = type === 'deposit' ? 'deposited into' : 'withdrawn from';
       const delta = type === 'deposit' ? amount : -amount;
 
-      setAccounts(prev => prev.map(acc => 
-        acc.accountId === account.accountId 
-          ? { ...acc, balance: (Number(acc.balance) || 0) + delta }
-          : acc
-      ));
+      // Only manually update state if it's a local wallet or the API call was skipped/suppressed
+      // otherwise, fetchAccountsData has already refreshed the state from the server.
+      if (account.isLocalWallet || (typeof res !== 'undefined' && !res.ok)) {
+        setAccounts(prev => prev.map(acc => 
+          acc.accountId === account.accountId 
+            ? { ...acc, balance: (Number(acc.balance) || 0) + delta }
+            : acc
+        ));
+      }
       
       setCashActionModal(prev => ({
         ...prev,
