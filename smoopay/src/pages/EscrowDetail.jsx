@@ -522,11 +522,11 @@ export default function EscrowDetail({ escrowId, onBack }) {
               onClick={handleOpenEditAgreement}
             >
               {/* Vertical Divider Line - Attached to Card with padding */}
-              <div className="hidden lg:block absolute -right-6 top-8 bottom-8 w-[1.5px] bg-slate-300/70 z-10" />
+              <div className="hidden lg:block absolute -right-6 top-8 bottom-8 w-[1.5px] bg-border z-10" />
 
               <div className={cn(
-                "p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden bg-white shadow-sm flex flex-col",
-                escrow.status === 'Draft' ? "hover:border-primary/40 hover:shadow-xl border-border/60" : "border-border/40"
+                "p-6 rounded-2xl border transition-all duration-500 relative overflow-hidden bg-surface shadow-sm flex flex-col",
+                escrow.status === 'Draft' ? "hover:border-primary/40 hover:shadow-xl border-black/10 dark:border-white/10" : "border-black/10 dark:border-white/10"
               )}>
                 <div className="absolute -right-20 -top-20 w-40 h-40 bg-primary/5 blur-[60px] rounded-full group-hover/card:bg-primary/10 transition-colors pointer-events-none" />
                 <div className="flex items-start gap-4 mb-6 relative z-10">
@@ -600,7 +600,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                   <span className="text-sm text-textSecondary relative z-10">Agreement Value</span>
                   <div className="text-3xl font-bold text-textPrimary relative z-10">${escrow.amount.toLocaleString()}</div>
 
-                  <div className="w-full bg-surface-hover/20 rounded-full h-2 mt-5 relative z-10 overflow-hidden border border-border transition-colors">
+                  <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-2 mt-5 relative z-10 overflow-hidden border border-border transition-colors">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${(paidTotal / escrow.amount) * 100}%` }}
@@ -615,7 +615,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                 </div>
 
                 <div className="pt-2.5 border-t border-white/5 mt-2">
-                  <div className="flex items-start text-textSecondary text-[13px] bg-surface-hover/15 px-2.5 py-0.5 rounded-xl border border-white/5 mb-4">
+                  <div className="flex items-start text-textSecondary text-[13px] bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-xl border border-white/5 mb-4">
                     <p className="leading-tight">Funds are secured in an insulated smart wallet and cannot be accessed by the contractor until you manually release payment.</p>
                   </div>
 
@@ -687,7 +687,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative items-center">
                         {/* Horizontal Connector Line (Desktop) */}
-                        <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-3 h-[1.5px] bg-slate-300/70 group-hover/row:bg-primary/50 transition-colors z-20" />
+                        <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-3 h-[1.5px] bg-border group-hover/row:bg-primary/50 transition-colors z-20" />
 
                         {/* Milestone Detail Card */}
                         <div
@@ -695,8 +695,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
                           onClick={() => escrow.status === 'Draft' && handleOpenEdit(milestone)}
                         >
                           <div className={cn(
-                            "p-6 h-[240px] rounded-2xl border transition-all duration-500 relative overflow-hidden bg-white shadow-sm flex flex-col",
-                            escrow.status === 'Draft' ? "hover:border-primary/40 hover:shadow-xl border-border/60" : "border-border/40"
+                            "p-6 h-[240px] rounded-2xl border transition-all duration-500 relative overflow-hidden bg-surface shadow-sm flex flex-col",
+                            escrow.status === 'Draft' ? "hover:border-primary/40 hover:shadow-xl border-black/10 dark:border-white/10" : "border-black/10 dark:border-white/10"
                           )}>
                             <div className="absolute -right-20 -top-20 w-40 h-40 bg-primary/5 blur-[60px] rounded-full group-hover/card:bg-primary/10 transition-colors pointer-events-none" />
                             <div className="flex justify-between items-start mb-6 relative z-10">
@@ -710,8 +710,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
                                 <p className="text-[10px] font-mono text-textSecondary/60 uppercase tracking-tight mt-1">ID: {milestone.id}</p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Value</p>
-                                <p className="text-lg font-bold text-slate-900 tracking-tight">
+                                <p className="text-[9px] font-bold text-textSecondary uppercase tracking-wider mb-0.5">Value</p>
+                                <p className="text-lg font-bold text-textPrimary tracking-tight">
                                   ${milestone.amount.toLocaleString()}
                                 </p>
                               </div>
@@ -723,7 +723,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                                 <span className={cn(
                                   "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tight",
                                   isApproved || isPaid ? "bg-emerald-500/10 text-emerald-600" :
-                                    "bg-slate-100 text-slate-500"
+                                    "bg-black/5 dark:bg-white/5 text-textSecondary border border-white/5"
                                 )}>
                                   {milestone.status}
                                 </span>
@@ -741,7 +741,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
                               {isPending && escrow.status === 'Active' && (
                                 <Button
                                   size="sm"
-                                  className="w-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 shadow-none font-bold py-2 rounded-lg"
+                                  variant="ghost"
+                                  className="w-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 hover:text-primary shadow-none font-bold py-2 rounded-lg"
                                   disabled={approvingMilestoneId !== null}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -760,8 +761,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
                               )}
 
                               {isPending && escrow.status !== 'Active' && (
-                                <div className="text-center py-2 bg-slate-50 rounded-lg border border-slate-100">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase italic">Awaiting Activation</span>
+                                <div className="text-center py-2 bg-black/5 dark:bg-white/5 rounded-lg border border-border">
+                                  <span className="text-[10px] font-bold text-textSecondary uppercase italic">Awaiting Activation</span>
                                 </div>
                               )}
                             </div>
@@ -770,7 +771,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
                         {/* Horizontal Connector Line (Mobile) */}
                         <div className="lg:hidden flex justify-center -my-4 relative z-10">
-                          <div className="w-6 h-[1.5px] bg-slate-300/70 group-hover/row:bg-primary/50 transition-colors" />
+                          <div className="w-6 h-[1.5px] bg-border group-hover/row:bg-primary/50 transition-colors" />
                         </div>
 
                         {/* Submissions registry list */}
@@ -790,7 +791,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                   animate={{ opacity: 1 }}
                   className="flex flex-col items-center justify-center py-12 text-center"
                 >
-                  <div className="p-4 bg-surface-hover/20 rounded-full mb-4 border border-white/5">
+                  <div className="p-4 bg-black/5 dark:bg-white/5 rounded-full mb-4 border border-white/5">
                     <Clock className="w-8 h-8 text-textSecondary" />
                   </div>
                   <h3 className="text-lg font-bold text-textPrimary mb-1">No Milestones Defined</h3>
@@ -840,7 +841,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       </label>
                       <textarea
                         rows={3}
-                        className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50"
                         placeholder="e.g. Agreement signature and repository access granted..."
                         value={newMilestone.Description}
                         onChange={e => setNewMilestone({ ...newMilestone, Description: e.target.value })}
@@ -853,7 +854,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                           <input
                             type="number"
                             placeholder="0.00"
-                            className="w-full bg-surface-hover/60 border border-border/80 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50"
                             value={newMilestone.TransactionValue}
                             onChange={e => setNewMilestone({ ...newMilestone, TransactionValue: e.target.value })}
                           />
@@ -864,7 +865,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-sm font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expected Date</label>
                         <input
                           type="date"
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                           value={newMilestone.Date}
                           onChange={e => setNewMilestone({ ...newMilestone, Date: e.target.value })}
                         />
@@ -926,7 +927,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       </label>
                       <textarea
                         rows={3}
-                        className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50 disabled:opacity-70 disabled:grayscale-[0.5]"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50 disabled:opacity-70 disabled:grayscale-[0.5]"
                         value={editingMilestone.Description}
                         disabled={['Active', 'Completed'].includes(escrow.status)}
                         onChange={e => setEditingMilestone({ ...editingMilestone, Description: e.target.value })}
@@ -938,7 +939,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <div className="relative">
                           <input
                              type="number"
-                            className="w-full bg-surface-hover/60 border border-border/80 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
                             value={editingMilestone.TransactionValue}
                             disabled={escrow.status !== 'Draft'}
                             onChange={e => setEditingMilestone({ ...editingMilestone, TransactionValue: e.target.value })}
@@ -950,7 +951,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-sm font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expected Date</label>
                         <input
                            type="date"
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
                           value={editingMilestone.Date}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingMilestone({ ...editingMilestone, Date: e.target.value })}
@@ -1015,54 +1016,52 @@ export default function EscrowDetail({ escrowId, onBack }) {
                   </div>
 
                   <div className="space-y-5">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-3">
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Agreement Title</label>
                          <input
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium disabled:opacity-50 disabled:grayscale"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.Title}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Title: e.target.value })}
                         />
                       </div>
 
-                      <div className="col-span-2">
+                      <div className="md:col-span-3">
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Description</label>
                          <textarea
                           rows={2}
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-sans text-sm disabled:opacity-50 disabled:grayscale"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-sans text-sm disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.Description}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Description: e.target.value })}
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Contractor Account ID</label>
-                           <input
-                            className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all uppercase font-mono disabled:opacity-50 disabled:grayscale"
-                            value={editingAgreement.ContractorAccountId}
-                            disabled={escrow.status !== 'Draft'}
-                            onChange={e => setEditingAgreement({ ...editingAgreement, ContractorAccountId: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Contractor UEN</label>
-                           <input
-                            className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono disabled:opacity-50 disabled:grayscale"
-                            value={editingAgreement.ContractorUen || ''}
-                            disabled={escrow.status !== 'Draft'}
-                            onChange={e => setEditingAgreement({ ...editingAgreement, ContractorUen: e.target.value })}
-                          />
-                        </div>
+                      <div className="flex flex-col justify-end h-full">
+                        <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Contractor Account ID</label>
+                         <input
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all uppercase font-mono disabled:opacity-50 disabled:grayscale mt-auto"
+                          value={editingAgreement.ContractorAccountId}
+                          disabled={escrow.status !== 'Draft'}
+                          onChange={e => setEditingAgreement({ ...editingAgreement, ContractorAccountId: e.target.value })}
+                        />
                       </div>
 
-                      <div>
+                      <div className="flex flex-col justify-end h-full">
+                        <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Contractor UEN</label>
+                         <input
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-mono disabled:opacity-50 disabled:grayscale mt-auto"
+                          value={editingAgreement.ContractorUen || ''}
+                          disabled={escrow.status !== 'Draft'}
+                          onChange={e => setEditingAgreement({ ...editingAgreement, ContractorUen: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="flex flex-col justify-end h-full">
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Currency</label>
                         <select
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:grayscale"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:grayscale mt-auto"
                           value={editingAgreement.Currency}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Currency: e.target.value })}
@@ -1080,7 +1079,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <div className="relative">
                           <input
                             type="number"
-                            className="w-full bg-surface-hover/60 border border-border/80 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium disabled:opacity-50 disabled:grayscale"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium disabled:opacity-50 disabled:grayscale"
                             value={editingAgreement.TransactionValue}
                             disabled={escrow.status !== 'Draft'}
                             onChange={e => setEditingAgreement({ ...editingAgreement, TransactionValue: e.target.value })}
@@ -1092,7 +1091,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Effective</label>
                         <input
                           type="date"
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.EffectiveDate}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, EffectiveDate: e.target.value })}
@@ -1102,7 +1101,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expiry</label>
                         <input
                           type="date"
-                          className="w-full bg-surface-hover/60 border border-border/80 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.ExpiryDate}
                           disabled={escrow.status === 'Active'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, ExpiryDate: e.target.value })}
@@ -1139,10 +1138,10 @@ export default function EscrowDetail({ escrowId, onBack }) {
 // Sub-component for displaying submissions for a specific milestone
 function SubmissionTracker({ submissions = [], onPreview, fetchingFileId }) {
   return (
-    <div className="bg-white border border-border/40 rounded-2xl p-6 shadow-sm flex flex-col h-[240px]">
+    <div className="bg-surface border border-black/10 dark:border-white/10 rounded-2xl p-6 shadow-sm flex flex-col h-[240px]">
       <div className="flex justify-between items-center mb-4">
         <h5 className="text-[10px] font-bold text-textSecondary uppercase tracking-widest">Submissions</h5>
-        <div className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-bold text-slate-500">
+        <div className="px-2 py-0.5 bg-black/5 dark:bg-white/5 border border-white/5 rounded text-[9px] font-bold text-textSecondary">
           {submissions.length} FILES
         </div>
       </div>
@@ -1155,7 +1154,7 @@ function SubmissionTracker({ submissions = [], onPreview, fetchingFileId }) {
               <div
                 key={sub.Id || `sub-${Math.random()}`}
                 className={cn(
-                  "group flex items-center justify-between p-3 bg-white border border-border/50 rounded-xl transition-all shadow-sm",
+                  "group flex items-center justify-between p-3 bg-surface hover:bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl transition-all shadow-sm",
                   isLoading ? "opacity-70 pointer-events-none" : "hover:border-primary/30 cursor-pointer"
                 )}
                 onClick={() => onPreview(sub)}
@@ -1163,7 +1162,7 @@ function SubmissionTracker({ submissions = [], onPreview, fetchingFileId }) {
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn(
                     "p-2 rounded-lg transition-colors",
-                    isLoading ? "bg-primary/10" : "bg-slate-50 group-hover:bg-primary/5"
+                    isLoading ? "bg-primary/10" : "bg-black/5 dark:bg-white/5 group-hover:bg-primary/5"
                   )}>
                     {isLoading ? (
                       <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
@@ -1184,10 +1183,10 @@ function SubmissionTracker({ submissions = [], onPreview, fetchingFileId }) {
           })
         ) : (
           <div className="h-full flex flex-col items-center justify-center py-8 opacity-40 grayscale">
-            <div className="p-2 bg-slate-100 rounded-full mb-2">
-              <Plus className="w-4 h-4 text-slate-400 rotate-45" />
+            <div className="p-2 bg-black/5 dark:bg-white/5 rounded-full mb-2">
+              <Plus className="w-4 h-4 text-textSecondary rotate-45" />
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">No files uploaded</p>
+            <p className="text-[10px] font-bold text-textSecondary uppercase tracking-tight">No files uploaded</p>
           </div>
         )}
       </div>

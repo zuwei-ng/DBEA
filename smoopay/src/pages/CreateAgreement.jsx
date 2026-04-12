@@ -99,15 +99,15 @@ export default function CreateAgreement({ onBack, onSuccess }) {
     }
   };
 
-  const inputClasses = "w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50 h-[50px]";
-  const textareaClasses = "w-full bg-surface-hover/60 border border-border/80 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50";
+  const inputClasses = "w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50 h-[50px]";
+  const textareaClasses = "w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-textSecondary/50";
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pb-20">
       <div className="flex items-center gap-4">
         <button 
           onClick={onBack}
-          className="p-2 bg-surface-hover/50 hover:bg-surface-hover rounded-xl border border-white/5 transition-all text-textSecondary group"
+          className="p-2 bg-black/5 dark:bg-white/5 hover:bg-surface-hover rounded-xl border border-white/5 transition-all text-textSecondary group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
@@ -209,7 +209,7 @@ export default function CreateAgreement({ onBack, onSuccess }) {
                 onChange={e => setFormData({...formData, Currency: e.target.value})}
               >
                 {availableCurrencies.map(curr => (
-                  <option key={curr} value={curr}>{curr}</option>
+                  <option key={curr} value={curr} className="bg-background">{curr}</option>
                 ))}
               </select>
             </div>

@@ -268,7 +268,7 @@ export default function SignUp() {
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-textPrimary">{processingStatus}</h3>
                 <p className="text-textSecondary mb-8 text-sm">We are securely preparing your corporate account details and verifying credentials.</p>
-                <div className="w-full bg-surface-hover/20 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-black/5 dark:bg-white/5 h-1.5 rounded-full overflow-hidden">
                    <div className="h-full bg-primary" style={{ width: `${scanProgress}%` }}></div>
                 </div>
                 <span className="mt-4 text-primary font-mono text-sm">{Math.round(scanProgress)}%</span>
@@ -296,23 +296,23 @@ function BusinessStep({ formData, handleChange, showErrors }) {
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Company Name</label>
-          <input name="givenName" value={formData.givenName} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Acme FinTech Ltd" />
+          <input name="givenName" value={formData.givenName} onChange={handleChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. Acme FinTech Ltd" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">UEN Number</label>
-          <input name="icNumber" value={formData.icNumber} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. UEN929292" />
+          <input name="icNumber" value={formData.icNumber} onChange={handleChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. UEN929292" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Email Address</label>
-          <input name="emailAddress" value={formData.emailAddress} onChange={handleChange} type="email" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. hello@acme.com" />
+          <input name="emailAddress" value={formData.emailAddress} onChange={handleChange} type="email" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. hello@acme.com" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Username</label>
-          <input name="preferredUserld" value={formData.preferredUserld} onChange={handleChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. smoopay123" />
+          <input name="preferredUserld" value={formData.preferredUserld} onChange={handleChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="e.g. smoopay123" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Password</label>
-          <input name="password" value={formData.password} onChange={handleChange} type="password" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="••••••••" />
+          <input name="password" value={formData.password} onChange={handleChange} type="password" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-textPrimary" placeholder="••••••••" />
         </div>
       </div>
     </div>
@@ -328,25 +328,25 @@ function OfficeStep({ data, onChange }) {
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Office Address 1</label>
-          <input name="officeAddress1" value={data.officeAddress1} onChange={onChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
+          <input name="officeAddress1" value={data.officeAddress1} onChange={onChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Office Address 2</label>
-          <input name="officeAddress2" value={data.officeAddress2} onChange={onChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
+          <input name="officeAddress2" value={data.officeAddress2} onChange={onChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Office Address 3</label>
-          <input name="officeAddress3" value={data.officeAddress3} onChange={onChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
+          <input name="officeAddress3" value={data.officeAddress3} onChange={onChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
           <div className="space-y-2">
             <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Office Contact Number</label>
-            <input name="officeContactNumber" value={data.officeContactNumber} onChange={onChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
+            <input name="officeContactNumber" value={data.officeContactNumber} onChange={onChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-textSecondary uppercase tracking-wider">Extension</label>
-            <input name="officeContactNumberExt" value={data.officeContactNumberExt} onChange={onChange} type="text" className="w-full bg-surface-hover/20 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
+            <input name="officeContactNumberExt" value={data.officeContactNumberExt} onChange={onChange} type="text" className="w-full bg-black/5 dark:bg-white/5 border border-border rounded-xl px-4 py-3 focus:border-primary outline-none text-textPrimary transition-all" />
           </div>
         </div>
         
