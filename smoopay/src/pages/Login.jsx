@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMockStore } from '../store/MockStore';
 import { GlassCard } from '../components/ui/GlassCard';
@@ -7,6 +8,7 @@ import { Shield, UserPlus, Lock, Building, Zap, Activity } from 'lucide-react';
 
 export default function Login() {
   const { login, signUp } = useMockStore();
+  const navigate = useNavigate();
   const [uen, setUen] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +40,7 @@ export default function Login() {
            isNewUser: false,
            onboardingStep: 5 // Fully onboarded
          });
+         navigate('/dashboard');
       } else {
          setErrorMsg(verifyJson.Message || 'Invalid credentials');
       }
@@ -54,6 +57,7 @@ export default function Login() {
       name: 'New Business',
       isNewUser: true
     });
+    navigate('/signup');
   };
 
   return (

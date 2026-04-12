@@ -24,6 +24,7 @@ const steps = [
 ];
 
 export default function SignUp() {
+  const navigate = useNavigate();
   const { user, updateUser, logout } = useMockStore();
   const currentStep = user?.onboardingStep || 1;
   const [isProcessing, setIsProcessing] = useState(false);
@@ -195,13 +196,14 @@ export default function SignUp() {
               uen: verifiedData?.UEN || formData.icNumber || 'TESTUEN111',
               ficoScore: verifiedData?.ficoScore || null
             });
+            navigate('/dashboard');
           }, 1000);
         }
         setScanProgress(progress);
       }, 200);
       return () => clearInterval(interval);
     }
-  }, [isProcessing, verifiedData, formData, updateUser]);
+  }, [isProcessing, verifiedData, formData, updateUser, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-textPrimary p-6 md:p-12 overflow-y-auto transition-colors duration-500">
