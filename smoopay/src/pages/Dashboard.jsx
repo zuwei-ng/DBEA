@@ -26,9 +26,6 @@ export default function Dashboard() {
   const [selectedWalletCurrency, setSelectedWalletCurrency] = useState('');
   const [isAddingWallet, setIsAddingWallet] = useState(false);
   
-  const [liveExchangeRate, setLiveExchangeRate] = useState(null);
-  const [isRateLoading, setIsRateLoading] = useState(false);
-  
   const [selectedTx, setSelectedTx] = useState(null); // Used to display invoice modal
   const [accounts, setAccounts] = useState([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
@@ -286,43 +283,6 @@ export default function Dashboard() {
 
     fetchCurrencies();
   }, [user?.profileData?.givenName]);
-
-  // Fetch live exchange rate when currencies change
-  useEffect(() => {
-    if (!exchangeFrom || !exchangeTo || exchangeFrom === exchangeTo) {
-      setLiveExchangeRate(null);
-      return;
-    }
-
-    const fetchLiveRate = async () => {
-      setIsRateLoading(true);
-      try {
-        const username = "12173e30ec556fe4a951";
-        const password = "2fbbd75fd60a8389b82719d2dbc37f1eb9ed226f3eb43cfa7d9240c72fd5+bfc89ad4-c17f-4fe9-82c2-918d29d59fe0";
-        const authHeader = 'Basic ' + window.btoa(username + ':' + password);
-        
-        const url = `https://smuedu-dev.outsystemsenterprise.com/gateway/rest/marketdata/exchange_rate?baseCurrency=${exchangeFrom}&quoteCurrency=${exchangeTo}`;
-        const res = await fetch(url, {
-          headers: { 'Authorization': authHeader }
-        });
-        
-        if (!res.ok) throw new Error('API failed');
-        const data = await res.json();
-        if (data && data.rate) {
-          setLiveExchangeRate(parseFloat(data.rate));
-        } else {
-          setLiveExchangeRate(null);
-        }
-      } catch (err) {
-        console.warn('Failed to fetch live exchange rate, falling back to mock:', err);
-        setLiveExchangeRate(null);
-      } finally {
-        setIsRateLoading(false);
-      }
-    };
-
-    fetchLiveRate();
-  }, [exchangeFrom, exchangeTo]);
   
   const mockFxRates = {
     'USD-EUR': 0.92, 'EUR-USD': 1.09, 'USD-SGD': 1.34, 'SGD-USD': 0.75,
@@ -385,11 +345,6 @@ export default function Dashboard() {
   });
 
   const getFxRate = (fromCurrency, toCurrency) => {
-    // If it's the current selected pair in Quick Exchange and we have a live rate, use it
-    if (fromCurrency === exchangeFrom && toCurrency === exchangeTo && liveExchangeRate !== null) {
-      return liveExchangeRate;
-    }
-
     const directRate = mockFxRates[`${fromCurrency}-${toCurrency}`];
     if (directRate) {
       return directRate;
@@ -798,7 +753,7 @@ export default function Dashboard() {
 
               <div className="bg-black/5 dark:bg-white/5 rounded-xl p-3 border border-border">
                 <div className="flex justify-between text-sm text-textSecondary mb-2">
-                  <span>To (Rate: {isRateLoading ? 'Loading...' : currentRate.toFixed(4)})</span>
+                  <span>To (Rate: {currentRate})</span>
                 </div>
                 <div className="flex items-center gap-2 overflow-hidden">
                   <div className="flex items-center gap-2">
@@ -837,7 +792,7 @@ export default function Dashboard() {
             <Button
               className="w-full mt-4"
               onClick={handleExecuteExchange}
-              disabled={isExchangeSubmitting || isRateLoading || !Number.isFinite(exchangeAmountValue) || exchangeAmountValue <= 0 || !exchangeFrom || !exchangeTo}
+              disabled={isExchangeSubmitting || !Number.isFinite(exchangeAmountValue) || exchangeAmountValue <= 0 || !exchangeFrom || !exchangeTo}
             >
               {isExchangeSubmitting ? (
                 <>
