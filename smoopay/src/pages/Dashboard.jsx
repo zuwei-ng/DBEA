@@ -302,6 +302,8 @@ export default function Dashboard() {
 
   // Fetch live exchange rate when currencies change
   useEffect(() => {
+    let ignore = false;
+
     if (!exchangeFrom || !exchangeTo || exchangeFrom === exchangeTo) {
       setLiveExchangeRate(null);
       return;
@@ -321,20 +323,31 @@ export default function Dashboard() {
 
         if (!res.ok) throw new Error('API failed');
         const data = await res.json();
-        if (data && data.rate) {
-          setLiveExchangeRate(parseFloat(data.rate));
-        } else {
-          setLiveExchangeRate(null);
+        
+        if (!ignore) {
+          if (data && data.rate) {
+            setLiveExchangeRate(parseFloat(data.rate));
+          } else {
+            setLiveExchangeRate(null);
+          }
         }
       } catch (err) {
-        console.warn('Failed to fetch live exchange rate, falling back to mock:', err);
-        setLiveExchangeRate(null);
+        if (!ignore) {
+          console.warn('Failed to fetch live exchange rate, falling back to mock:', err);
+          setLiveExchangeRate(null);
+        }
       } finally {
-        setIsRateLoading(false);
+        if (!ignore) {
+          setIsRateLoading(false);
+        }
       }
     };
 
     fetchLiveRate();
+    
+    return () => {
+      ignore = true;
+    };
   }, [exchangeFrom, exchangeTo]);
 
   const mockFxRates = {
@@ -499,6 +512,9 @@ export default function Dashboard() {
       .filter((currency) => currency !== exchangeFrom && hasFxPair(exchangeFrom, currency));
 
     if (availableTargets.length === 0) {
+      if (exchangeTo !== exchangeFrom) {
+        setExchangeTo(exchangeFrom);
+      }
       return;
     }
 
