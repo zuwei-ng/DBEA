@@ -84,6 +84,9 @@ export default function EscrowDetail({ escrowId, onBack }) {
       };
 
       setEscrow(mappedEscrow);
+      if (mappedEscrow.effectiveDate) {
+        setNewMilestone(prev => ({ ...prev, Date: mappedEscrow.effectiveDate }));
+      }
     } catch (error) {
       console.error("Failed to fetch escrow details:", error);
     } finally {
@@ -95,15 +98,15 @@ export default function EscrowDetail({ escrowId, onBack }) {
     fetchEscrowDetails();
   }, [fetchEscrowDetails]);
 
-  useEffect(() => {
+   useEffect(() => {
     const fetchAccounts = async () => {
       if (!user?.customerId && !user?.uen) return;
       try {
-        const identifier = user.customerId || user.uen;
-        const response = await fetch(`${API_ENDPOINTS.GET_ACCOUNTS_BY_UEN}?UENorCustID=${identifier}`);
+        const identifier = user.uen || user.customerId;
+        const response = await fetch(`${API_ENDPOINTS.GET_ACCOUNTS_BY_UEN}?UEN=${encodeURIComponent(identifier)}`);
         const data = await response.json();
         
-        const accountList = data.Data || data || [];
+        const accountList = data || [];
         if (Array.isArray(accountList) && accountList.length > 0) {
           const currencies = Array.from(new Set(accountList.map(acc => acc.Currency).filter(Boolean)));
           if (currencies.length > 0) {
@@ -145,6 +148,9 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
   const milestones = escrow.milestones;
   const agreementTotal = milestones.reduce((sum, m) => sum + m.amount, 0);
+  const hasInvalidMilestoneDates = (milestones || []).some(m => 
+    m.date < escrow.effectiveDate || (escrow.expiryDate && m.date > escrow.expiryDate)
+  );
   const paidTotal = escrow.valuePaid;
 
 
@@ -191,7 +197,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
 
       if (response.ok) {
         setShowAddMilestone(false);
-        setNewMilestone({ Description: '', TransactionValue: '', Date: new Date().toISOString().split('T')[0] });
+        setNewMilestone({ Description: '', TransactionValue: '', Date: escrow?.effectiveDate || new Date().toISOString().split('T')[0] });
         fetchEscrowDetails();
       } else {
         console.error("Failed to add milestone");
@@ -623,8 +629,8 @@ export default function EscrowDetail({ escrowId, onBack }) {
                     <div className="space-y-3">
                       <Button
                         className="w-full"
-                        pulse={agreementTotal === escrow.amount}
-                        disabled={agreementTotal !== escrow.amount || isActivating}
+                        pulse={agreementTotal === escrow.amount && !hasInvalidMilestoneDates}
+                        disabled={agreementTotal !== escrow.amount || hasInvalidMilestoneDates || isActivating}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleActivateAgreement();
@@ -639,6 +645,15 @@ export default function EscrowDetail({ escrowId, onBack }) {
                           <Clock className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                           <p className="text-[11px] text-red-600 font-medium leading-relaxed">
                             Allocation mismatch: Milestones sum to <strong>${agreementTotal.toLocaleString()}</strong>, but agreement value is <strong>${escrow.amount.toLocaleString()}</strong>.
+                          </p>
+                        </div>
+                      )}
+
+                      {hasInvalidMilestoneDates && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex gap-2 items-start animate-in fade-in slide-in-from-top-2">
+                          <Clock className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                          <p className="text-[11px] text-red-600 font-medium leading-relaxed">
+                            Date validation error: Some milestones are scheduled <strong>outside</strong> the agreement's effective/expiry range. Please adjust them below.
                           </p>
                         </div>
                       )}
@@ -687,7 +702,9 @@ export default function EscrowDetail({ escrowId, onBack }) {
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative items-center">
                         {/* Horizontal Connector Line (Desktop) */}
-                        <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-3 h-[1.5px] bg-border group-hover/row:bg-primary/50 transition-colors z-20" />
+                        {escrow.status !== 'Draft' && (
+                          <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-3 h-[1.5px] bg-border group-hover/row:bg-primary/50 transition-colors z-20" />
+                        )}
 
                         {/* Milestone Detail Card */}
                         <div
@@ -770,17 +787,21 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         </div>
 
                         {/* Horizontal Connector Line (Mobile) */}
-                        <div className="lg:hidden flex justify-center -my-4 relative z-10">
-                          <div className="w-6 h-[1.5px] bg-border group-hover/row:bg-primary/50 transition-colors" />
-                        </div>
+                        {escrow.status !== 'Draft' && (
+                          <div className="lg:hidden flex justify-center -my-4 relative z-10">
+                            <div className="w-6 h-[1.5px] bg-border group-hover/row:bg-primary/50 transition-colors" />
+                          </div>
+                        )}
 
                         {/* Submissions registry list */}
-                        <SubmissionTracker
-                          key={`sub-${milestone.id}`}
-                          submissions={escrow.submissions.filter(s => s.MilestoneId?.toLowerCase() === milestone.id?.toLowerCase())}
-                          onPreview={handlePreviewSubmission}
-                          fetchingFileId={fetchingFileId}
-                        />
+                        {escrow.status !== 'Draft' && (
+                          <SubmissionTracker
+                            key={`sub-${milestone.id}`}
+                            submissions={escrow.submissions.filter(s => s.MilestoneId?.toLowerCase() === milestone.id?.toLowerCase())}
+                            onPreview={handlePreviewSubmission}
+                            fetchingFileId={fetchingFileId}
+                          />
+                        )}
                       </div>
                     </motion.div>
                   )
@@ -865,16 +886,36 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-sm font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expected Date</label>
                         <input
                           type="date"
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                          min={escrow.effectiveDate || new Date().toISOString().split('T')[0]}
+                          max={escrow.expiryDate || undefined}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-sans"
                           value={newMilestone.Date}
                           onChange={e => setNewMilestone({ ...newMilestone, Date: e.target.value })}
                         />
+                        {newMilestone.Date && escrow.effectiveDate && newMilestone.Date < escrow.effectiveDate && (
+                          <p className="text-[10px] text-red-500 font-bold mt-1 animate-in fade-in slide-in-from-top-1 px-1 uppercase tracking-tight">
+                            Date cannot be before effective date ({escrow.effectiveDate})
+                          </p>
+                        )}
+                        {newMilestone.Date && escrow.expiryDate && newMilestone.Date > escrow.expiryDate && (
+                          <p className="text-[10px] text-red-500 font-bold mt-1 animate-in fade-in slide-in-from-top-1 px-1 uppercase tracking-tight">
+                            Date cannot be after expiry date ({escrow.expiryDate})
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="pt-6 mt-2 border-t border-white/5 flex gap-4">
                       <Button variant="ghost" onClick={() => setShowAddMilestone(false)}>Cancel</Button>
-                      <Button className="flex-1" onClick={submitMilestone} disabled={addingMilestone} pulse>
+                      <Button 
+                        className="flex-1" 
+                        onClick={submitMilestone} 
+                        disabled={addingMilestone || (newMilestone.Date && (
+                          (escrow.effectiveDate && newMilestone.Date < escrow.effectiveDate) ||
+                          (escrow.expiryDate && newMilestone.Date > escrow.expiryDate)
+                        ))} 
+                        pulse
+                      >
                         {addingMilestone ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         {addingMilestone ? 'Creating Phase...' : 'Create Milestone'}
                       </Button>
@@ -950,19 +991,39 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       <div>
                         <label className="text-sm font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expected Date</label>
                         <input
-                           type="date"
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70"
+                          type="date"
+                          min={escrow.effectiveDate || new Date().toISOString().split('T')[0]}
+                          max={escrow.expiryDate || undefined}
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-70 font-sans"
                           value={editingMilestone.Date}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingMilestone({ ...editingMilestone, Date: e.target.value })}
                         />
+                        {editingMilestone.Date && escrow.effectiveDate && editingMilestone.Date < escrow.effectiveDate && (
+                          <p className="text-[10px] text-red-500 font-bold mt-1 animate-in fade-in slide-in-from-top-1 px-1 uppercase tracking-tight">
+                            Date cannot be before effective date ({escrow.effectiveDate})
+                          </p>
+                        )}
+                        {editingMilestone.Date && escrow.expiryDate && editingMilestone.Date > escrow.expiryDate && (
+                          <p className="text-[10px] text-red-500 font-bold mt-1 animate-in fade-in slide-in-from-top-1 px-1 uppercase tracking-tight">
+                            Date cannot be after expiry date ({escrow.expiryDate})
+                          </p>
+                        )}
                       </div>
                     </div>
 
                      <div className="pt-6 mt-2 border-t border-white/5 flex gap-4">
                       <Button variant="ghost" className="flex-1" onClick={() => setShowEditMilestone(false)}>{escrow.status === 'Draft' ? 'Cancel' : 'Close'}</Button>
                       {escrow.status === 'Draft' && (
-                        <Button className="flex-1" onClick={submitEditMilestone} disabled={savingMilestone} pulse>
+                        <Button 
+                          className="flex-1" 
+                          onClick={submitEditMilestone} 
+                          disabled={savingMilestone || (editingMilestone.Date && (
+                            (escrow.effectiveDate && editingMilestone.Date < escrow.effectiveDate) ||
+                            (escrow.expiryDate && editingMilestone.Date > escrow.expiryDate)
+                          ))} 
+                          pulse
+                        >
                           {savingMilestone ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                           {savingMilestone ? 'Saving Changes...' : 'Update Milestone'}
                         </Button>
@@ -1061,7 +1122,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                       <div className="flex flex-col justify-end h-full">
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Currency</label>
                         <select
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:grayscale mt-auto"
+                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale mt-auto h-[50px]"
                           value={editingAgreement.Currency}
                           disabled={escrow.status !== 'Draft'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, Currency: e.target.value })}
@@ -1091,6 +1152,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Effective</label>
                         <input
                           type="date"
+                          min={new Date().toISOString().split('T')[0]}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.EffectiveDate}
                           disabled={escrow.status !== 'Draft'}
@@ -1101,11 +1163,17 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <label className="text-[11px] font-bold text-textSecondary uppercase tracking-wider mb-2 block">Expiry</label>
                         <input
                           type="date"
+                          min={editingAgreement.EffectiveDate || new Date().toISOString().split('T')[0]}
                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl px-3 py-3 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50 disabled:grayscale"
                           value={editingAgreement.ExpiryDate}
                           disabled={escrow.status === 'Active'}
                           onChange={e => setEditingAgreement({ ...editingAgreement, ExpiryDate: e.target.value })}
                         />
+                        {editingAgreement.ExpiryDate && editingAgreement.EffectiveDate > editingAgreement.ExpiryDate && (
+                          <p className="text-[9px] text-red-500 font-bold mt-1 animate-in fade-in slide-in-from-top-1 px-1 uppercase tracking-tight">
+                            Expiry cannot be before effective date
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -1115,7 +1183,7 @@ export default function EscrowDetail({ escrowId, onBack }) {
                         <Button
                           className="flex-1"
                           onClick={submitEditAgreement}
-                          disabled={savingAgreement}
+                          disabled={savingAgreement || (editingAgreement.ExpiryDate && editingAgreement.EffectiveDate > editingAgreement.ExpiryDate)}
                           pulse
                         >
                           {savingAgreement ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

@@ -21,7 +21,7 @@ export default function CreateAgreement({ onBack, onSuccess }) {
     Currency: "",
     Status: "Draft",
     EffectiveDate: new Date().toISOString().split('T')[0],
-    ExpiryDate: ""
+    ExpiryDate: new Date().toISOString().split('T')[0]
   });
 
   const [availableAccounts, setAvailableAccounts] = useState([]);
@@ -224,6 +224,7 @@ export default function CreateAgreement({ onBack, onSuccess }) {
               <input 
                 required
                 type="date"
+                min={new Date().toISOString().split('T')[0]}
                 className={inputClasses}
                 value={formData.EffectiveDate}
                 onChange={e => setFormData({...formData, EffectiveDate: e.target.value})}
@@ -236,10 +237,16 @@ export default function CreateAgreement({ onBack, onSuccess }) {
               <input 
                 required
                 type="date"
+                min={formData.EffectiveDate || new Date().toISOString().split('T')[0]}
                 className={inputClasses}
                 value={formData.ExpiryDate}
                 onChange={e => setFormData({...formData, ExpiryDate: e.target.value})}
               />
+              {formData.ExpiryDate && formData.EffectiveDate > formData.ExpiryDate && (
+                <p className="text-[10px] text-red-500 font-bold mt-1 animate-in fade-in slide-in-from-top-1 px-1 flex items-center gap-1 uppercase tracking-tight">
+                   Expiry cannot be before effective date
+                </p>
+              )}
             </div>
           </div>
 
@@ -255,7 +262,12 @@ export default function CreateAgreement({ onBack, onSuccess }) {
             </div>
             <div className="flex gap-10 w-full sm:w-auto mt-4 sm:mt-0">
               <Button type="button" variant="ghost" onClick={onBack} disabled={loading}>Cancel</Button>
-              <Button type="submit" className="flex-1 sm:flex-initial min-w-[140px]" disabled={loading} pulse>
+              <Button 
+                type="submit" 
+                className="flex-1 sm:flex-initial min-w-[140px]" 
+                disabled={loading || (formData.ExpiryDate && formData.EffectiveDate > formData.ExpiryDate)} 
+                pulse
+              >
                 {loading ? 'Creating...' : 'Create'}
                 {!loading && <ChevronRight className="w-4 h-4 ml-2" />}
               </Button>

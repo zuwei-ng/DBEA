@@ -13,6 +13,7 @@ export default function Escrow() {
   const handleBackToList = () => {
     setSelectedEscrowId(null);
     setIsCreating(false);
+    fetchAgreements(); // Ensure list is fresh when returning
   };
 
   const handleCreateSuccess = (newId) => {

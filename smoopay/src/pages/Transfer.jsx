@@ -363,14 +363,14 @@ export default function Transfer() {
             {currentStep === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                 <GlassCard className="text-center py-20 flex flex-col items-center">
-                  <div className="w-24 h-24 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(52,211,153,0.3)]">
+                  <div className="w-24 h-24 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-8 mx-auto shadow-[0_0_40px_rgba(52,211,153,0.3)]">
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 10, delay: 0.2 }}>
                       <Check className="w-12 h-12" />
                     </motion.div>
                   </div>
                   <h2 className="text-3xl font-bold mb-4 text-textPrimary">Transfer Successful</h2>
                   <div className="space-y-2 mb-10">
-                    <p className="text-textSecondary max-w-sm">
+                    <p className="text-textSecondary max-w-sm mx-auto">
                       Your transfer of <span className="text-textPrimary font-bold">{transferAmount} {displaySourceCurrency}</span> has been successfully dispatched.
                     </p>
                     <div className="bg-black/5 dark:bg-white/5 px-4 py-2 rounded-lg inline-block text-xs font-mono text-textSecondary border border-border">
